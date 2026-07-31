@@ -20,7 +20,7 @@ export class ApiError extends Error {
 export async function fetchEmotions(): Promise<Emotion[]> {
   const { data, error } = await supabase
     .from('emotions')
-    .select('code, label, valence, color')
+    .select('code, label, valence, color, bucket')
     .order('sort_order');
 
   if (error) throw new ApiError(error.message, error.code);

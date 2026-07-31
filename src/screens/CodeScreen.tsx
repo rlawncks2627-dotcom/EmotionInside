@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 
 import { fetchRoster } from '../lib/api';
+import { asset } from '../lib/assets';
 import type { Notify } from '../components/Toast';
 import type { RosterEntry } from '../types';
 
@@ -41,27 +42,48 @@ export function CodeScreen({ onFound, notify }: Props) {
   }
 
   return (
-    <div className="card">
-      <h2>우리 반 코드를 넣어줘</h2>
-      <p>선생님이 알려주신 {CODE_LENGTH}글자를 입력하면 돼.</p>
-      <form onSubmit={handleSubmit}>
-        <input
-          className="code-input"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          type="text"
-          inputMode="text"
-          autoComplete="off"
-          autoCapitalize="characters"
-          spellCheck={false}
-          maxLength={CODE_LENGTH}
-          placeholder="YS201"
-          aria-label="학급 코드"
-        />
-        <button className="btn btn-primary" type="submit" style={{ width: '100%' }} disabled={busy}>
-          {busy ? '확인하는 중…' : '확인'}
-        </button>
-      </form>
+    <div className="hello">
+      <img
+        className="hero"
+        src={asset('assets/bg/hero-cast.webp')}
+        alt=""
+        aria-hidden="true"
+        width={600}
+        height={506}
+      />
+
+      <h1 className="hello-title">
+        감정<span>Inside</span>
+      </h1>
+      <p className="hello-sub">오늘의 컨디션 체크하기</p>
+
+      <div className="card">
+        <h2>우리 반 코드를 넣어줘</h2>
+        <p>선생님이 알려주신 {CODE_LENGTH}글자를 입력하면 돼.</p>
+        <form onSubmit={handleSubmit}>
+          <input
+            className="code-input"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            type="text"
+            inputMode="text"
+            autoComplete="off"
+            autoCapitalize="characters"
+            spellCheck={false}
+            maxLength={CODE_LENGTH}
+            placeholder="YS201"
+            aria-label="학급 코드"
+          />
+          <button
+            className="btn btn-primary"
+            type="submit"
+            style={{ width: '100%' }}
+            disabled={busy}
+          >
+            {busy ? '확인하는 중…' : '확인'}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

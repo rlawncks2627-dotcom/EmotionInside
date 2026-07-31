@@ -1,9 +1,13 @@
+/** 담임이 정한 집계 분류. valence 와 별개다 — 부럽이는 valence 가 낮아도 긍정으로 본다. */
+export type Bucket = 'good' | 'soso' | 'hard';
+
 /** 감정 종류. valence 는 -2(가장 힘듦) ~ +2(가장 좋음). */
 export interface Emotion {
   code: string;
   label: string;
   valence: number;
   color: string;
+  bucket: Bucket;
 }
 
 /** roster_by_code 가 돌려주는 한 줄. 감정 기록 내용은 절대 포함되지 않는다. */

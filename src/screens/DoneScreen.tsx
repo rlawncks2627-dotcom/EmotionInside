@@ -45,7 +45,7 @@ export function DoneScreen({ result, onNext }: Props) {
   return (
     <div className="done">
       <img className="pick-img" src={characterTile(emotion.code)} alt={emotion.label} />
-      <h2>{closingFor(emotion.valence)}</h2>
+      <h2>{closingFor(emotion.bucket)}</h2>
       <p>오늘의 나는 {emotion.label}.</p>
       {note && <div className="said">“{note}”</div>}
       {next}

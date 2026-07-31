@@ -1,3 +1,5 @@
+import type { Bucket } from '../types';
+
 /** 비어 있지 않은 목록에서 하나를 고른다. 튜플 타입이라 undefined 가 나올 수 없다. */
 export function pick<T>(items: readonly [T, ...T[]]): T {
   const i = Math.floor(Math.random() * items.length);
@@ -31,14 +33,14 @@ export const NOTE_HINTS: readonly [string, ...string[]] = [
 export const CONDITION_LEVELS: readonly { score: number; label: string }[] = [
   { score: 5, label: '아주 좋아' },
   { score: 4, label: '좋아' },
-  { score: 3, label: '그냥 그래' },
-  { score: 2, label: '별로야' },
+  { score: 3, label: '보통이야' },
+  { score: 2, label: '힘들어' },
   { score: 1, label: '많이 힘들어' },
 ];
 
-/** 고른 감정의 valence 에 따라 완료 화면 문구를 고른다. */
-export function closingFor(valence: number): string {
-  if (valence >= 1) return pick(['오늘도 잘 왔어!', '그 기분 그대로 가자!']);
-  if (valence === 0) return pick(['잘 왔어!', '오늘도 함께해줘서 고마워.']);
-  return pick(['이야기해줘서 고마워.', '오늘은 선생님이 더 살펴볼게.']);
+/** 고른 감정의 분류에 따라 완료 화면 문구를 고른다. 대시보드와 같은 기준을 쓴다. */
+export function closingFor(bucket: Bucket): string {
+  if (bucket === 'good') return pick(['오늘도 잘 왔어!', '그 기분 그대로 가자!']);
+  if (bucket === 'hard') return pick(['이야기해줘서 고마워.', '오늘은 선생님이 더 살펴볼게.']);
+  return pick(['잘 왔어!', '오늘도 함께해줘서 고마워.']);
 }

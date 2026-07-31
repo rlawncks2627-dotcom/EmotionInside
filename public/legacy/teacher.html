@@ -680,7 +680,7 @@
 
     async function loadEmotions() {
       const { data, error } = await db.from('emotions')
-        .select('code, label, valence, color, is_watch').order('sort_order');
+        .select('code, label, valence, color, is_watch, bucket').order('sort_order');
       if (error) throw error;
       emotions = new Map(data.map((e) => [e.code, e]));
     }
@@ -742,10 +742,12 @@
         const row = dayRows.get(s.id);
         const e = row ? emotions.get(row.emotion_code) : null;
 
+        // 분류는 emotions.bucket 을 그대로 따른다.
+        // valence 로 계산하면 부럽이(-1)가 힘듦으로 빠져 담임의 분류와 어긋난다.
         if (e) {
-          if (e.valence >= 1) good++;
-          else if (e.valence === 0) soso++;
-          else hard++;
+          if (e.bucket === 'good') good++;
+          else if (e.bucket === 'hard') hard++;
+          else soso++;
         }
         if (row?.note) notes++;
 
