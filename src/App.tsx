@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { Toast, useToast } from './components/Toast';
 import { CodeScreen } from './screens/CodeScreen';
@@ -7,7 +7,7 @@ import { EmotionScreen } from './screens/EmotionScreen';
 import { RosterScreen } from './screens/RosterScreen';
 import { fetchEmotions, fetchRoster } from './lib/api';
 import { asset } from './lib/assets';
-import { savedCode, savedStudent } from './lib/storage';
+import { forgetLegacyStudent, savedCode } from './lib/storage';
 import type { DoneResult, Emotion, RosterEntry, SavedStudent } from './types';
 
 import './styles/student.css';
@@ -31,11 +31,40 @@ export default function App() {
   const [code, setCode] = useState('');
   const { notify, toast } = useToast();
 
-  // 앱을 열 때: 감정 목록을 받고, 기억해둔 코드·이름으로 갈 수 있는 데까지 건너뛴다.
+  /**
+   * 명단으로 돌아간다. 태블릿 한 대를 줄 서서 쓰기 때문에
+   * 한 명이 끝나면 반드시 명단이 다시 떠야 다음 학생이 이어서 쓸 수 있다.
+   * 제출 표시를 갱신해야 하므로 그때마다 새로 읽는다.
+   */
+  const backToRoster = useCallback(
+    async (forCode?: string) => {
+      const target = forCode ?? code;
+      if (!target) {
+        setScreen({ kind: 'code' });
+        return;
+      }
+      try {
+        const rows = await fetchRoster(target);
+        if (rows.length === 0) {
+          savedCode.clear();
+          setScreen({ kind: 'code' });
+          return;
+        }
+        setScreen({ kind: 'roster', rows });
+      } catch {
+        notify('명단을 못 불러왔어. 잠시 뒤에 다시 해줄래?', 'bad');
+      }
+    },
+    [code, notify],
+  );
+
   useEffect(() => {
     let alive = true;
 
     void (async () => {
+      // 예전 판이 남긴 학생 정보를 지운다. 그대로 두면 앞사람 화면이 다시 뜬다.
+      forgetLegacyStudent();
+
       try {
         const list = await fetchEmotions();
         if (!alive) return;
@@ -69,21 +98,8 @@ export default function App() {
       }
 
       setCode(stored);
-
-      const me = savedStudent.get();
-      const mine = me ? rows.find((r) => r.student_id === me.id) : undefined;
-
-      if (!mine) {
-        setScreen({ kind: 'roster', rows });
-        return;
-      }
-
-      savedStudent.set(toSaved(mine));
-      setScreen(
-        mine.submitted
-          ? { kind: 'done', result: { kind: 'revisited', name: mine.student_name } }
-          : { kind: 'emotion', me: toSaved(mine) },
-      );
+      // 누가 쓸지 모르니 언제나 명단부터 보여준다.
+      setScreen({ kind: 'roster', rows });
     })();
 
     return () => {
@@ -92,28 +108,15 @@ export default function App() {
   }, [notify]);
 
   function handleRosterPick(entry: RosterEntry) {
-    const me = toSaved(entry);
-    savedStudent.set(me);
-
     if (entry.submitted) {
-      setScreen({ kind: 'done', result: { kind: 'revisited', name: me.name } });
+      notify(`${entry.student_name}, 오늘은 이미 기록했어!`);
       return;
     }
-    setScreen({ kind: 'emotion', me });
-  }
-
-  async function handleNotMe() {
-    savedStudent.clear();
-    try {
-      setScreen({ kind: 'roster', rows: await fetchRoster(code) });
-    } catch {
-      notify('명단을 못 불러왔어. 잠시 뒤에 다시 해줄래?', 'bad');
-    }
+    setScreen({ kind: 'emotion', me: toSaved(entry) });
   }
 
   function handleChangeClass() {
     savedCode.clear();
-    savedStudent.clear();
     setCode('');
     setScreen({ kind: 'code' });
   }
@@ -157,12 +160,14 @@ export default function App() {
               code={code}
               emotions={emotions}
               notify={notify}
-              onNotMe={() => void handleNotMe()}
+              onNotMe={() => void backToRoster()}
               onDone={(result) => setScreen({ kind: 'done', result })}
             />
           )}
 
-          {screen.kind === 'done' && <DoneScreen result={screen.result} />}
+          {screen.kind === 'done' && (
+            <DoneScreen result={screen.result} onNext={() => void backToRoster()} />
+          )}
         </div>
       )}
 

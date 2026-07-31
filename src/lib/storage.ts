@@ -1,7 +1,9 @@
-import type { SavedStudent } from '../types';
+// 태블릿 한 대를 여러 학생이 돌려 쓴다.
+// 그래서 학급 코드만 기억하고, 누가 썼는지는 절대 남기지 않는다.
+// 학생을 기억해두면 다음 학생이 앞사람 화면으로 들어가 버린다.
 
 const KEY_CODE = 'ei.code';
-const KEY_STUDENT = 'ei.student';
+const LEGACY_KEY_STUDENT = 'ei.student';
 
 // 사생활 보호 모드에서는 localStorage 접근이 예외를 던진다.
 // 기억을 못 할 뿐 앱은 계속 돌아가야 하므로 조용히 넘긴다.
@@ -37,8 +39,7 @@ export const savedCode = {
   clear: () => clear(KEY_CODE),
 };
 
-export const savedStudent = {
-  get: () => read<SavedStudent>(KEY_STUDENT),
-  set: (student: SavedStudent) => write(KEY_STUDENT, student),
-  clear: () => clear(KEY_STUDENT),
-};
+/** 예전 판이 기기에 남겨둔 학생 정보를 지운다. 남아 있으면 앞사람 화면이 다시 뜬다. */
+export function forgetLegacyStudent(): void {
+  clear(LEGACY_KEY_STUDENT);
+}

@@ -23,6 +23,19 @@ export const NOTE_HINTS: readonly [string, ...string[]] = [
   '고민이 있으면 여기에 살짝 적어둬.',
 ];
 
+/**
+ * 오늘의 컨디션 1~5점.
+ * 감정 캐릭터가 "어떤 마음인지"라면, 이 점수는 "몸과 마음이 어떤 상태인지"다.
+ * 둘이 다를 수 있어서 따로 받는다 — 웃고 있어도 몸이 힘든 날이 있다.
+ */
+export const CONDITION_LEVELS: readonly { score: number; label: string }[] = [
+  { score: 5, label: '아주 좋아' },
+  { score: 4, label: '좋아' },
+  { score: 3, label: '그냥 그래' },
+  { score: 2, label: '별로야' },
+  { score: 1, label: '많이 힘들어' },
+];
+
 /** 고른 감정의 valence 에 따라 완료 화면 문구를 고른다. */
 export function closingFor(valence: number): string {
   if (valence >= 1) return pick(['오늘도 잘 왔어!', '그 기분 그대로 가자!']);

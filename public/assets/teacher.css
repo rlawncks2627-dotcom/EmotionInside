@@ -10,6 +10,7 @@ body {
 body[data-screen="auth"]   .screen[data-screen="auth"],
 body[data-screen="signup"] .screen[data-screen="signup"],
 body[data-screen="setup"]  .screen[data-screen="setup"],
+body[data-screen="roster"] .screen[data-screen="roster"],
 body[data-screen="board"]  .screen[data-screen="board"] { display: block; }
 
 body[data-screen="loading"] .screen { display: none; }
@@ -205,6 +206,157 @@ body:not([data-screen="loading"]) .boot { display: none; }
   color: #8a5510;
 }
 
+/* ── 명단 관리 표 ──────────────────────────────────── */
+
+.sheet-wrap {
+  min-height: 100dvh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: clamp(16px, 4vh, 48px) 16px;
+  background: linear-gradient(160deg, #2a1c4d, #1b1233);
+}
+
+.sheet {
+  width: min(760px, 100%);
+  background: #fff;
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - clamp(32px, 8vh, 96px));
+}
+
+.sheet-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 26px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.sheet-head h1 { font-size: 23px; }
+.sheet-head .sub { margin: 4px 0 0; font-size: 14px; font-weight: 700; color: var(--ink-soft); }
+
+/* 닫기 버튼. 저장하지 않고도 빠져나올 수 있어야 한다. */
+.close-x {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: #f2effa;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.close-x:hover { background: #e6e0f5; color: var(--ink); }
+
+.sheet-body {
+  padding: 18px 26px 22px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.sheet-body .lead {
+  margin: 0 0 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.sheet-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 26px;
+  border-top: 1px solid var(--line);
+  background: #faf9fd;
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
+}
+
+.roster-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.roster-table th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 800;
+  color: #9a92b8;
+  padding: 0 10px 8px;
+}
+
+.roster-table td {
+  padding: 3px 4px;
+  vertical-align: middle;
+}
+
+.roster-table .rn {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+
+.roster-table input {
+  width: 100%;
+  padding: 11px 13px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: #f7f5fc;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.roster-table input:hover { background: #f1eef9; }
+
+.roster-table input:focus {
+  border-color: #7c6ac4;
+  background: #fff;
+  outline: none;
+}
+
+.roster-table input[data-empty="1"] { border-color: #d9534f; background: #fdf1f0; }
+
+/* 기록이 있는 학생은 지울 때 그 기록도 함께 사라진다 — 미리 보여준다. */
+.roster-table .marks {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  padding-left: 10px;
+}
+
+.roster-table .marks[data-has="1"] { color: #8a5510; }
+
+.row-del {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  font-size: 18px;
+  color: #9a92b8;
+  background: transparent;
+}
+
+.row-del:hover { background: #fdecea; color: #b3261e; }
+
+.roster-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.roster-count { font-size: 14px; font-weight: 700; color: var(--ink-soft); }
+
 /* ── 가입 신청 (관리자에게만 보임) ─────────────────── */
 
 .signup-banner {
@@ -329,6 +481,13 @@ body:not([data-screen="loading"]) .boot { display: none; }
 .card-s .nm { font-size: 16px; font-weight: 800; }
 .card-s .no { font-size: 12px; font-weight: 700; color: var(--ink-soft); }
 
+.card-s .tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
 .card-s .emo {
   display: inline-block;
   padding: 3px 10px;
@@ -337,6 +496,22 @@ body:not([data-screen="loading"]) .boot { display: none; }
   color: var(--em-deep, #4a3b86);
   font-size: 13px;
   font-weight: 800;
+}
+
+.card-s .score {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #eef1f7;
+  color: #4b5570;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* 컨디션 2점 이하는 한눈에 보이게 한다 */
+.card-s .score[data-low="1"] {
+  background: #fdecea;
+  color: #a3261e;
 }
 
 .card-s .memo {

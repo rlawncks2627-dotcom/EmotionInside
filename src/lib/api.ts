@@ -42,12 +42,14 @@ export async function submitCheckin(args: {
   studentId: string;
   emotion: string;
   note: string;
+  score: number;
 }): Promise<void> {
   const { error } = await supabase.rpc('submit_checkin', {
     p_code: args.code,
     p_student: args.studentId,
     p_emotion: args.emotion,
     p_note: args.note.trim() || null,
+    p_score: args.score,
   });
 
   if (error) throw new ApiError(error.message, error.code);

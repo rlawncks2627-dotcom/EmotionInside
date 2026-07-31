@@ -134,17 +134,49 @@
         </div>
 
         <div id="setup-roster" hidden>
-          <h1>명단을 넣어주세요</h1>
-          <p class="lead">엑셀에서 이름 칸을 복사해 그대로 붙여넣으면 됩니다.</p>
-          <form id="roster-form">
-            <div class="field">
-              <label for="names">학생 이름 (한 줄에 한 명)</label>
-              <textarea id="names" placeholder="김하늘&#10;이바다&#10;박소망" required></textarea>
-              <p class="hint">번호는 붙여넣은 순서대로 1번부터 매겨집니다.
-                「1  김하늘」처럼 번호가 함께 있어도 알아서 처리해요.</p>
-            </div>
-            <button class="btn btn-primary" type="submit" style="width:100%">명단 저장</button>
-          </form>
+          <h1>이제 명단을 넣어요</h1>
+          <p class="lead">학급이 만들어졌습니다. 이어서 학생 명단을 채워주세요.</p>
+          <button class="btn btn-primary" type="button" id="go-roster" style="width:100%">
+            명단 만들기
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 명단 관리 ──────────────────────────────────── -->
+  <section class="screen" data-screen="roster">
+    <div class="sheet-wrap">
+      <div class="sheet">
+        <div class="sheet-head">
+          <div>
+            <h1>명단 관리</h1>
+            <p class="sub" id="roster-class"></p>
+          </div>
+          <button type="button" class="close-x" id="roster-close" aria-label="닫기" title="닫기">×</button>
+        </div>
+
+        <div class="sheet-body">
+          <p class="lead">이름 칸을 눌러 바로 고칠 수 있어요. 번호는 순서대로 자동으로 매겨집니다.</p>
+
+          <table class="roster-table">
+            <thead>
+              <tr><th style="width:72px">번호</th><th>이름</th><th style="width:120px">기록</th><th style="width:64px"></th></tr>
+            </thead>
+            <tbody id="roster-rows"></tbody>
+          </table>
+
+          <div class="roster-tools">
+            <button class="btn btn-quiet" type="button" id="roster-add" style="min-height:44px">
+              + 학생 한 명 추가
+            </button>
+            <span class="roster-count" id="roster-count"></span>
+          </div>
+        </div>
+
+        <div class="sheet-foot">
+          <button class="btn btn-quiet" type="button" id="roster-cancel">취소</button>
+          <button class="btn btn-primary" type="button" id="roster-save">명단 저장</button>
         </div>
       </div>
     </div>
@@ -487,30 +519,152 @@
       $('setup-roster').hidden = false;
     });
 
-    $('roster-form').addEventListener('submit', async (ev) => {
-      ev.preventDefault();
-      // 「1  김하늘」처럼 번호가 붙어 있으면 떼어낸다.
-      const names = $('names').value
-        .split('\n')
-        .map((s) => s.replace(/^\s*\d+\s*[.\t)]?\s*/, '').trim())
-        .filter(Boolean);
+    // ── 명단 관리 (표 편집) ─────────────────────────
+    // 한 학급 25명을 기본으로 잡되 한 명씩 늘리고 줄일 수 있다.
 
-      if (!names.length) { toast('이름을 한 명 이상 넣어주세요.', 'bad'); return; }
+    const ROSTER_DEFAULT = 25;
+    let rosterRows = [];   // { id: string|null, name: string, marks: number }
 
-      const start = students.length;
-      const rows = names.map((name, i) => ({ class_id: cls.id, no: start + i + 1, name }));
-      const { error } = await db.from('students').insert(rows);
+    async function openRoster() {
+      const { data: list, error } = await db.from('students')
+        .select('id, no, name').eq('class_id', cls.id).order('no');
       if (error) { toast(error.message, 'bad'); return; }
 
-      $('names').value = '';
-      toast(`${names.length}명을 등록했습니다.`);
-      await loadBoard();
+      // 학생을 지우면 그 학생의 감정 기록도 함께 사라진다. 미리 몇 건인지 보여준다.
+      const marks = new Map();
+      if (list.length) {
+        const { data: ck } = await db.from('checkins')
+          .select('student_id').in('student_id', list.map((s) => s.id));
+        for (const c of ck ?? []) marks.set(c.student_id, (marks.get(c.student_id) ?? 0) + 1);
+      }
+
+      rosterRows = list.map((s) => ({
+        id: s.id, name: s.name, marks: marks.get(s.id) ?? 0,
+      }));
+
+      // 처음이라면 표준 인원만큼 빈 줄을 깔아둔다.
+      while (rosterRows.length < ROSTER_DEFAULT && list.length === 0) {
+        rosterRows.push({ id: null, name: '', marks: 0 });
+      }
+
+      $('roster-class').textContent =
+        `${cls.grade}학년 ${cls.class_no}반 · 학급코드 ${cls.join_code}`;
+      drawRoster();
+      show('roster');
+    }
+
+    function drawRoster() {
+      const body = $('roster-rows');
+      body.innerHTML = '';
+
+      rosterRows.forEach((row, i) => {
+        const tr = document.createElement('tr');
+
+        const tdNo = document.createElement('td');
+        tdNo.className = 'rn';
+        tdNo.textContent = String(i + 1);
+
+        const tdName = document.createElement('td');
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = row.name;
+        input.maxLength = 20;
+        input.placeholder = '이름';
+        input.setAttribute('aria-label', `${i + 1}번 학생 이름`);
+        if (!row.name.trim()) input.dataset.empty = '1';
+        input.addEventListener('input', () => {
+          row.name = input.value;
+          input.dataset.empty = input.value.trim() ? '0' : '1';
+        });
+        // 엔터를 누르면 다음 칸으로. 25명을 연달아 칠 때 편하다.
+        input.addEventListener('keydown', (ev) => {
+          if (ev.key !== 'Enter') return;
+          ev.preventDefault();
+          const next = body.querySelectorAll('input')[i + 1];
+          if (next) next.focus();
+          else { addRosterRow(); body.querySelectorAll('input')[i + 1]?.focus(); }
+        });
+        tdName.append(input);
+
+        const tdMarks = document.createElement('td');
+        tdMarks.className = 'marks';
+        tdMarks.dataset.has = row.marks > 0 ? '1' : '0';
+        tdMarks.textContent = row.marks > 0 ? `${row.marks}건` : '—';
+
+        const tdDel = document.createElement('td');
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'row-del';
+        del.textContent = '×';
+        del.title = '이 학생 지우기';
+        del.setAttribute('aria-label', `${i + 1}번 학생 지우기`);
+        del.addEventListener('click', () => removeRosterRow(i));
+        tdDel.append(del);
+
+        tr.append(tdNo, tdName, tdMarks, tdDel);
+        body.append(tr);
+      });
+
+      $('roster-count').textContent = `모두 ${rosterRows.length}명`;
+    }
+
+    function addRosterRow() {
+      rosterRows.push({ id: null, name: '', marks: 0 });
+      drawRoster();
+    }
+
+    function removeRosterRow(i) {
+      const row = rosterRows[i];
+      if (row.marks > 0) {
+        const name = row.name.trim() || `${i + 1}번`;
+        if (!confirm(`${name} 학생을 지우면 그동안 쌓인 감정 기록 ${row.marks}건도 함께 사라집니다.\n정말 지울까요?`)) return;
+      }
+      rosterRows.splice(i, 1);
+      drawRoster();
+    }
+
+    $('roster-add').addEventListener('click', () => {
+      addRosterRow();
+      const inputs = $('roster-rows').querySelectorAll('input');
+      inputs[inputs.length - 1]?.focus();
     });
 
-    $('add-students').addEventListener('click', () => {
-      $('setup-class').hidden = true;
-      $('setup-roster').hidden = false;
-      show('setup');
+    $('go-roster').addEventListener('click', () => void openRoster());
+    $('add-students').addEventListener('click', () => void openRoster());
+
+    function leaveRoster() {
+      if (cls) { void loadBoard(); } else { show('auth'); }
+    }
+
+    $('roster-close').addEventListener('click', leaveRoster);
+    $('roster-cancel').addEventListener('click', leaveRoster);
+
+    $('roster-save').addEventListener('click', async () => {
+      const empty = rosterRows.findIndex((r) => !r.name.trim());
+      if (empty >= 0) {
+        toast(`${empty + 1}번 칸이 비어 있어요. 이름을 넣거나 그 줄을 지워주세요.`, 'bad');
+        $('roster-rows').querySelectorAll('input')[empty]?.focus();
+        return;
+      }
+      if (rosterRows.length === 0) {
+        toast('학생을 한 명 이상 넣어주세요.', 'bad');
+        return;
+      }
+
+      const payload = rosterRows.map((r, i) => ({
+        id: r.id, no: i + 1, name: r.name.trim(),
+      }));
+
+      $('roster-save').disabled = true;
+      const { data, error } = await db.rpc('save_roster', {
+        p_class_id: cls.id,
+        p_rows: payload,
+      });
+      $('roster-save').disabled = false;
+
+      if (error) { toast(error.message, 'bad'); return; }
+      toast(`명단을 저장했습니다. 모두 ${data}명입니다.`);
+      await loadBoard();
     });
 
     $('copy-code').addEventListener('click', async () => {
@@ -549,7 +703,7 @@
       dayRows = new Map();
       if (!students.length) return;
       const { data, error } = await db.from('checkins')
-        .select('id, student_id, emotion_code, note, checkin_date')
+        .select('id, student_id, emotion_code, note, condition_score, checkin_date')
         .eq('checkin_date', date)
         .in('student_id', students.map((s) => s.id));
       if (error) throw error;
@@ -640,10 +794,24 @@
         btn.append(top);
 
         if (e) {
+          const tags = document.createElement('span');
+          tags.className = 'tags';
+
           const tag = document.createElement('span');
           tag.className = 'emo';
           tag.textContent = e.label;
-          btn.append(tag);
+          tags.append(tag);
+
+          // 학생이 직접 매긴 컨디션. 낮을수록 눈에 띄게 한다.
+          if (row.condition_score != null) {
+            const sc = document.createElement('span');
+            sc.className = 'score';
+            sc.dataset.low = row.condition_score <= 2 ? '1' : '0';
+            sc.textContent = `컨디션 ${row.condition_score}`;
+            tags.append(sc);
+          }
+
+          btn.append(tags);
         }
 
         if (row?.note) {
@@ -717,7 +885,7 @@
       $('d-range').textContent = '월요일부터 금요일까지의 감정 흐름';
 
       const { data, error } = await db.from('checkins')
-        .select('id, checkin_date, emotion_code, note')
+        .select('id, checkin_date, emotion_code, note, condition_score')
         .eq('student_id', detailFor.id)
         .gte('checkin_date', ymd(mon))
         .lte('checkin_date', ymd(fri))
@@ -748,7 +916,8 @@
         li.style.setProperty('--em', d.emo?.color ?? '#ccc');
         const when = document.createElement('p');
         when.className = 'when';
-        when.textContent = `${fmtKo(d.date)} · ${d.emo?.label ?? ''}`;
+        const score = d.row.condition_score != null ? ` · 컨디션 ${d.row.condition_score}` : '';
+        when.textContent = `${fmtKo(d.date)} · ${d.emo?.label ?? ''}${score}`;
         const what = document.createElement('p');
         what.className = 'what';
         what.textContent = d.row.note;
@@ -856,7 +1025,7 @@
     async function doExport(act, kind) {
       const [from, to] = rangeFor(kind);
       const { data, error } = await db.from('checkins')
-        .select('checkin_date, emotion_code, note, students!inner(no, name, class_id)')
+        .select('checkin_date, emotion_code, note, condition_score, students!inner(no, name, class_id)')
         .eq('students.class_id', cls.id)
         .gte('checkin_date', from)
         .lte('checkin_date', to)
@@ -865,11 +1034,12 @@
       if (error) { toast(error.message, 'bad'); return; }
       if (!data.length) { toast('그 기간에는 기록이 없습니다.'); return; }
 
-      const head = ['날짜', '번호', '이름', '감정', '점수', '한마디'];
+      // 점수 칸은 감정의 valence 가 아니라 학생이 직접 매긴 컨디션(1~5)을 쓴다.
+      const head = ['날짜', '번호', '이름', '감정', '컨디션', '한마디'];
       const rows = data.map((r) => {
         const e = emotions.get(r.emotion_code);
         return [r.checkin_date, r.students.no, r.students.name,
-                e?.label ?? r.emotion_code, e?.valence ?? '', r.note ?? ''];
+                e?.label ?? r.emotion_code, r.condition_score ?? '', r.note ?? ''];
       });
 
       if (act === 'copy') {
