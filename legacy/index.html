@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1b1233">
+  <title>EmotionInside — 오늘의 감정</title>
+  <link rel="stylesheet" href="../assets/app.css">
+  <link rel="stylesheet" href="../assets/student.css">
+</head>
+<body class="no-select" data-screen="loading">
+  <div class="bg" aria-hidden="true"></div>
+
+  <div class="loading"><div class="spinner" role="status" aria-label="불러오는 중"></div></div>
+
+  <div class="wrap">
+
+    <!-- 1단계: 학급코드. 기기에 한 번만 넣으면 다시 묻지 않는다. -->
+    <section class="screen" data-screen="code">
+      <div class="card">
+        <h2>우리 반 코드를 넣어줘</h2>
+        <p>선생님이 알려주신 5글자를 입력하면 돼.</p>
+        <form id="code-form">
+          <input class="code-input" id="code-input" type="text" inputmode="latin"
+                 autocomplete="off" autocapitalize="characters" spellcheck="false"
+                 maxlength="5" placeholder="YS201" aria-label="학급 코드">
+          <button class="btn btn-primary" type="submit" style="width:100%">확인</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- 2단계: 이름 고르기. 고른 사람은 기기에 저장된다. -->
+    <section class="screen" data-screen="student">
+      <div class="topbar">
+        <span id="s-class"></span>
+        <button class="btn btn-ghost" type="button" id="forget-code">반 바꾸기</button>
+      </div>
+      <h1 class="title">누구야?</h1>
+      <p class="subtitle">네 이름을 눌러줘.</p>
+      <ul class="roster" id="roster"></ul>
+    </section>
+
+    <!-- 3단계: 감정 고르기 + 메모 -->
+    <section class="screen" data-screen="emotion">
+      <div class="topbar">
+        <span class="who"><span id="e-class"></span></span>
+        <span class="who">
+          <strong id="e-name"></strong>
+          <button class="btn btn-ghost" type="button" id="not-me">내가 아냐</button>
+        </span>
+      </div>
+
+      <h1 class="title" id="e-greet">오늘 기분 어때?</h1>
+      <p class="subtitle">마음에 가장 가까운 친구를 한 명 골라줘.</p>
+
+      <div class="emotion-layout">
+        <ul class="emotions" id="emotions"></ul>
+
+        <div class="note-box">
+          <label for="note">한마디 <span>— 쓰고 싶을 때만 써도 돼</span></label>
+          <textarea id="note" maxlength="220" rows="3"></textarea>
+          <div class="note-foot">
+            <span class="counter" id="counter">0 / 200</span>
+            <button class="btn btn-primary" type="button" id="submit" disabled>다 골랐어</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4단계: 완료. 개인 기기라 자동으로 넘어가지 않고 그대로 머문다. -->
+    <section class="screen" data-screen="done">
+      <div class="done">
+        <img class="pick-img" id="d-img" alt="" width="260" height="260">
+        <h2 id="d-title"></h2>
+        <p id="d-sub"></p>
+        <div class="said" id="d-note" hidden></div>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '../assets/config.js';
+
+    const db = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+    // 개인 기기 모드. 코드와 이름을 기억해서 다음 날 아침엔 곧장 감정 고르기로 간다.
+    const KEY_CODE = 'ei.code';
+    const KEY_STUDENT = 'ei.student';
+
+    const $ = (id) => document.getElementById(id);
+
+    // 메모란 안내문구. 매번 다른 문장이 떠서 "써도 되는구나" 하고 느끼게 한다.
+    const HINTS = [
+      '내 감정을 구체적으로 이야기해주면, 더 좋은 하루가 될 수 있어!',
+      '오늘 마음속에서 무슨 일이 있었어?',
+      '선생님만 볼 거야. 편하게 적어도 괜찮아.',
+      '왜 그런 기분이 들었는지 살짝 알려줄래?',
+      '짧아도 좋아. 한 줄이면 충분해!',
+      '말로 하기 어려우면, 여기에 적어봐.',
+      '오늘 하루를 어떻게 시작하고 싶어?',
+      '적어두면 나중에 네 마음이 보여.',
+      '어떤 기분이든 다 소중해. 그대로 적어줘.',
+      '무슨 일이 있었는지 들려줄래?',
+      '오늘의 나에게 한마디 남겨볼까?',
+      '고민이 있으면 여기에 살짝 적어둬.',
+    ];
+
+    // 고른 감정에 따라 완료 화면 문구를 바꾼다.
+    const CLOSING = {
+      good: ['오늘도 잘 왔어!', '그 기분 그대로 가자!'],
+      soso: ['잘 왔어!', '오늘도 함께해줘서 고마워.'],
+      hard: ['이야기해줘서 고마워.', '오늘은 선생님이 더 살펴볼게.'],
+    };
+
+    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+    let emotions = [];
+    let picked = null;
+    let sending = false;
+
+    function show(screen) {
+      document.body.dataset.screen = screen;
+      window.scrollTo(0, 0);
+    }
+
+    let toastTimer;
+    function toast(msg, tone) {
+      const el = $('toast');
+      el.textContent = msg;
+      el.dataset.tone = tone || 'ok';
+      el.dataset.show = '1';
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { el.dataset.show = '0'; }, 3200);
+    }
+
+    function saved(key) {
+      try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
+    }
+    function save(key, val) {
+      try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* 사생활 보호 모드 */ }
+    }
+    function drop(key) {
+      try { localStorage.removeItem(key); } catch { /* 무시 */ }
+    }
+
+    // ── 감정 목록 ────────────────────────────────────────
+
+    async function loadEmotions() {
+      const { data, error } = await db
+        .from('emotions')
+        .select('code, label, valence, color')
+        .order('sort_order');
+      if (error) throw error;
+      emotions = data;
+
+      const list = $('emotions');
+      list.innerHTML = '';
+      for (const e of emotions) {
+        const li = document.createElement('li');
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'emotion';
+        btn.dataset.code = e.code;
+        btn.setAttribute('aria-pressed', 'false');
+        btn.style.setProperty('--pick', e.color);
+
+        const img = document.createElement('img');
+        img.src = `../assets/characters/tile/${e.code}.webp`;
+        img.alt = e.label;
+        img.loading = 'eager';
+        img.width = 512;
+        img.height = 512;
+
+        const name = document.createElement('span');
+        name.className = 'name';
+        name.textContent = e.label;
+
+        btn.append(img, name);
+        btn.addEventListener('click', () => choose(e.code));
+        li.append(btn);
+        list.append(li);
+      }
+    }
+
+    function choose(code) {
+      picked = code;
+      const e = emotions.find((x) => x.code === code);
+      const list = $('emotions');
+      list.dataset.picked = code;
+
+      for (const btn of list.querySelectorAll('.emotion')) {
+        btn.setAttribute('aria-pressed', String(btn.dataset.code === code));
+      }
+      document.documentElement.style.setProperty('--pick', e.color);
+      $('submit').disabled = false;
+    }
+
+    // ── 명단 ────────────────────────────────────────────
+
+    async function loadRoster(code) {
+      const { data, error } = await db.rpc('roster_by_code', { p_code: code });
+      if (error) throw error;
+      return data;
+    }
+
+    function drawRoster(rows) {
+      $('s-class').textContent = rows[0]?.class_label ?? '';
+      const list = $('roster');
+      list.innerHTML = '';
+
+      for (const r of rows) {
+        const li = document.createElement('li');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'student';
+        if (r.submitted) btn.dataset.done = '1';
+
+        const no = document.createElement('span');
+        no.className = 'no';
+        no.textContent = `${r.student_no}번`;
+
+        const nm = document.createElement('span');
+        nm.textContent = r.student_name;
+
+        btn.append(no, nm);
+        btn.addEventListener('click', () => {
+          save(KEY_STUDENT, { id: r.student_id, name: r.student_name, label: r.class_label });
+          if (r.submitted) {
+            toast(`${r.student_name}, 오늘은 이미 기록했어!`);
+            return;
+          }
+          startEmotion();
+        });
+
+        li.append(btn);
+        list.append(li);
+      }
+    }
+
+    // ── 3단계 시작 ──────────────────────────────────────
+
+    function startEmotion() {
+      const me = saved(KEY_STUDENT);
+      $('e-name').textContent = me.name;
+      $('e-class').textContent = me.label ?? '';
+      $('e-greet').textContent = `${me.name}, 오늘 기분 어때?`;
+      $('note').placeholder = pick(HINTS);
+      show('emotion');
+    }
+
+    // ── 제출 ────────────────────────────────────────────
+
+    async function submit() {
+      if (sending || !picked) return;
+      const me = saved(KEY_STUDENT);
+      const code = saved(KEY_CODE);
+      const note = $('note').value.trim();
+
+      if (note.length > 200) {
+        toast('한마디는 200자까지만 쓸 수 있어.', 'bad');
+        return;
+      }
+
+      sending = true;
+      $('submit').disabled = true;
+      $('submit').textContent = '보내는 중…';
+
+      const { error } = await db.rpc('submit_checkin', {
+        p_code: code,
+        p_student: me.id,
+        p_emotion: picked,
+        p_note: note || null,
+      });
+
+      sending = false;
+      $('submit').textContent = '다 골랐어';
+
+      if (error) {
+        // 하루 한 번 제한에 걸린 경우엔 완료 화면으로 보내주는 편이 덜 당황스럽다.
+        if (error.code === '23505' || /이미 기록/.test(error.message)) {
+          done(true);
+          return;
+        }
+        $('submit').disabled = false;
+        toast(error.message || '보내지 못했어. 다시 눌러줄래?', 'bad');
+        return;
+      }
+
+      done(false);
+    }
+
+    function done(already) {
+      const e = emotions.find((x) => x.code === picked);
+      const bucket = e.valence >= 1 ? 'good' : e.valence === 0 ? 'soso' : 'hard';
+      const note = $('note').value.trim();
+
+      $('d-img').hidden = false;
+      $('d-img').src = `../assets/characters/tile/${e.code}.webp`;
+      $('d-img').alt = e.label;
+      $('d-title').textContent = already ? '오늘은 이미 기록했어!' : pick(CLOSING[bucket]);
+      $('d-sub').textContent = already
+        ? '기록은 하루에 한 번이야. 내일 또 만나자!'
+        : `오늘의 나는 ${e.label}.`;
+
+      if (!already && note) {
+        $('d-note').textContent = `“${note}”`;
+        $('d-note').hidden = false;
+      } else {
+        $('d-note').hidden = true;
+      }
+
+      show('done');
+    }
+
+    // ── 시작 ────────────────────────────────────────────
+
+    $('code-form').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const code = $('code-input').value.trim().toUpperCase();
+      if (code.length !== 5) { toast('코드는 5글자야. 다시 확인해줄래?', 'bad'); return; }
+
+      try {
+        const rows = await loadRoster(code);
+        if (!rows.length) { toast('그런 반이 없어. 코드를 다시 볼래?', 'bad'); return; }
+        save(KEY_CODE, code);
+        drawRoster(rows);
+        show('student');
+      } catch (err) {
+        toast(err.message || '연결이 안 돼. 잠시 뒤에 다시 해줄래?', 'bad');
+      }
+    });
+
+    $('note').addEventListener('input', () => {
+      const n = $('note').value.trim().length;
+      const c = $('counter');
+      c.textContent = `${n} / 200`;
+      c.dataset.over = n > 200 ? '1' : '0';
+    });
+
+    $('submit').addEventListener('click', submit);
+
+    $('not-me').addEventListener('click', async () => {
+      drop(KEY_STUDENT);
+      const rows = await loadRoster(saved(KEY_CODE));
+      drawRoster(rows);
+      show('student');
+    });
+
+    $('forget-code').addEventListener('click', () => {
+      drop(KEY_CODE);
+      drop(KEY_STUDENT);
+      $('code-input').value = '';
+      show('code');
+    });
+
+    async function boot() {
+      try {
+        await loadEmotions();
+      } catch (err) {
+        toast('감정 목록을 못 불러왔어. 인터넷을 확인해줄래?', 'bad');
+        show('code');
+        return;
+      }
+
+      const code = saved(KEY_CODE);
+      if (!code) { show('code'); return; }
+
+      let rows;
+      try {
+        rows = await loadRoster(code);
+      } catch {
+        show('code');
+        return;
+      }
+
+      if (!rows.length) { drop(KEY_CODE); show('code'); return; }
+
+      const me = saved(KEY_STUDENT);
+      const mine = me && rows.find((r) => r.student_id === me.id);
+
+      if (mine) {
+        // 이미 오늘 기록했다면 곧바로 완료 화면을 보여준다.
+        if (mine.submitted) {
+          save(KEY_STUDENT, { id: mine.student_id, name: mine.student_name, label: mine.class_label });
+          // 어떤 감정을 골랐는지는 돌려주지 않으므로(다른 학생 기록 보호) 캐릭터는 감춘다.
+          $('d-img').hidden = true;
+          $('d-title').textContent = `${mine.student_name}, 오늘은 이미 기록했어!`;
+          $('d-sub').textContent = '기록은 하루에 한 번이야. 내일 또 만나자!';
+          $('d-note').hidden = true;
+          show('done');
+          return;
+        }
+        save(KEY_STUDENT, { id: mine.student_id, name: mine.student_name, label: mine.class_label });
+        startEmotion();
+        return;
+      }
+
+      drawRoster(rows);
+      show('student');
+    }
+
+    boot();
+  </script>
+</body>
+</html>

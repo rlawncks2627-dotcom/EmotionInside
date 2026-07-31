@@ -1,0 +1,56 @@
+{
+  "joy": {
+    "label": "기쁨이",
+    "base": "#D9AF31",
+    "deep": "#83660F",
+    "soft": "#F7F1DE"
+  },
+  "sadness": {
+    "label": "슬픔이",
+    "base": "#4771AE",
+    "deep": "#233D64",
+    "soft": "#E3E9F2"
+  },
+  "anger": {
+    "label": "버럭이",
+    "base": "#AE4532",
+    "deep": "#652216",
+    "soft": "#F5E4E0"
+  },
+  "disgust": {
+    "label": "까칠이",
+    "base": "#439438",
+    "deep": "#22551B",
+    "soft": "#E4F3E2"
+  },
+  "fear": {
+    "label": "소심이",
+    "base": "#7B4BA3",
+    "deep": "#44265D",
+    "soft": "#EBE4F1"
+  },
+  "anxiety": {
+    "label": "불안이",
+    "base": "#E07623",
+    "deep": "#84400A",
+    "soft": "#F8E9DD"
+  },
+  "embarrassment": {
+    "label": "당황이",
+    "base": "#C45692",
+    "deep": "#782351",
+    "soft": "#F3E2EB"
+  },
+  "ennui": {
+    "label": "따분이",
+    "base": "#4F4CAC",
+    "deep": "#282662",
+    "soft": "#E4E4F2"
+  },
+  "envy": {
+    "label": "부럽이",
+    "base": "#169D94",
+    "deep": "#075C56",
+    "soft": "#DDF8F6"
+  }
+}

@@ -1,0 +1,178 @@
+/* EmotionInside 공통 스타일
+   학생 화면(index.html)과 교사 대시보드(teacher.html)가 함께 쓴다. */
+
+/* Pretendard 를 저장소에 직접 담아둔다.
+   CDN 을 쓰면 교내망에서 막혔을 때 글꼴이 통째로 바뀌어 화면이 달라 보인다.
+   이 파일이 /assets/app.css 이므로 fonts/ 는 /assets/fonts/ 를 가리킨다.
+   한글 서브셋 3종만 담는다(400·700·800). 600 은 브라우저가 700 으로 맞춘다. */
+@font-face {
+  font-family: 'Pretendard';
+  src: url('fonts/Pretendard-Regular.subset.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('fonts/Pretendard-Bold.subset.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('fonts/Pretendard-ExtraBold.subset.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* 인사이드아웃 본부의 보랏빛을 기준색으로 삼는다 */
+  --deep: #1b1233;
+  --deep-2: #2a1c4d;
+  --panel: rgba(255, 255, 255, 0.96);
+  --ink: #241a3d;
+  --ink-soft: #6b6288;
+  --line: #e4e0ee;
+
+  --joy: #f2b705;
+  --focus: #ffd44d;
+
+  --r-lg: 28px;
+  --r-md: 18px;
+  --r-sm: 10px;
+
+  --shadow: 0 18px 40px rgba(20, 10, 45, 0.28);
+  --shadow-sm: 0 4px 14px rgba(20, 10, 45, 0.14);
+
+  --font: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font);
+  color: var(--ink);
+  background: var(--deep);
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 태블릿에서 실수로 화면이 확대되거나 글자가 드래그되는 것을 막는다 */
+.no-select { user-select: none; -webkit-user-select: none; }
+
+h1, h2, h3 { margin: 0; line-height: 1.25; letter-spacing: -0.02em; }
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+/* 키보드 사용자를 위한 초점 표시. 마우스·터치에는 나타나지 않는다. */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* ── 버튼 ───────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 0 26px;
+  border-radius: 999px;
+  font-size: 17px;
+  font-weight: 700;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+}
+
+.btn:active { transform: translateY(1px) scale(0.99); }
+
+.btn-primary {
+  background: linear-gradient(180deg, #ffd764, var(--joy));
+  color: #4a3400;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.btn-quiet {
+  background: #f2effa;
+  color: var(--ink);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── 상태 표시 ──────────────────────────────────────── */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%) translateY(140%);
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 14px 22px;
+  border-radius: var(--r-md);
+  background: #2b1c4f;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  z-index: 90;
+}
+
+.toast[data-show="1"] { transform: translateX(-50%) translateY(0); }
+.toast[data-tone="bad"] { background: #8e2f22; }
+
+.spinner {
+  width: 34px;
+  height: 34px;
+  border: 4px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

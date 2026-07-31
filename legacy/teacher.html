@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2a1c4d">
+  <title>EmotionInside — 담임 대시보드</title>
+  <link rel="stylesheet" href="../assets/app.css">
+  <link rel="stylesheet" href="../assets/teacher.css">
+</head>
+<body data-screen="loading">
+
+  <div class="boot"><div class="spinner" role="status" aria-label="불러오는 중"></div></div>
+
+  <!-- ── 로그인 ─────────────────────────────────────── -->
+  <section class="screen" data-screen="auth">
+    <div class="center-wrap">
+      <div class="auth-card">
+        <p class="brand">EmotionInside</p>
+        <h1 id="auth-title">담임 선생님, 안녕하세요</h1>
+        <p class="lead" id="auth-lead">아이디와 비밀번호로 로그인하세요.</p>
+
+        <form id="auth-form">
+          <div class="field">
+            <label for="login-id">아이디</label>
+            <input id="login-id" type="text" autocomplete="username"
+                   inputmode="text" autocapitalize="none" spellcheck="false"
+                   pattern="[A-Za-z0-9_]{3,20}" maxlength="20" required
+                   placeholder="예) kim2024">
+            <p class="hint">영문 소문자·숫자·밑줄 3~20자</p>
+          </div>
+          <div class="field">
+            <label for="password">비밀번호</label>
+            <input id="password" type="password" autocomplete="current-password"
+                   minlength="6" required>
+            <p class="hint">영문자와 특수문자를 포함해 6자 이상</p>
+          </div>
+          <button class="btn btn-primary" type="submit" style="width:100%" id="auth-go">로그인</button>
+        </form>
+
+        <p class="switch-line">
+          <span>처음이신가요?</span>
+          <button type="button" id="go-signup">가입 신청하기</button>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 가입 신청 ──────────────────────────────────── -->
+  <section class="screen" data-screen="signup">
+    <div class="center-wrap">
+      <div class="auth-card">
+        <p class="brand">가입 신청</p>
+        <h1>우리 반을 등록해요</h1>
+        <p class="lead">신청하시면 관리 선생님이 확인 후 승인해 드립니다.</p>
+
+        <form id="signup-form">
+          <div class="row2">
+            <div class="field">
+              <label for="su-grade">학년</label>
+              <input id="su-grade" type="number" min="1" max="6" value="2" required>
+            </div>
+            <div class="field">
+              <label for="su-classno">반</label>
+              <input id="su-classno" type="number" min="1" max="20" value="1" required>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="su-code">학급코드</label>
+            <input id="su-code" type="text" maxlength="5" required
+                   autocapitalize="characters" spellcheck="false"
+                   style="text-transform:uppercase; letter-spacing:0.16em; font-weight:800">
+            <p class="hint">학년·반에 맞춰 자동으로 채워집니다. 직접 고치셔도 돼요. (5글자)</p>
+          </div>
+
+          <div class="field">
+            <label for="su-name">담임 이름</label>
+            <input id="su-name" type="text" required placeholder="김선생">
+          </div>
+
+          <div class="field">
+            <label for="su-id">아이디</label>
+            <input id="su-id" type="text" autocomplete="username"
+                   autocapitalize="none" spellcheck="false"
+                   pattern="[A-Za-z0-9_]{3,20}" maxlength="20" required
+                   placeholder="예) kim2024">
+            <p class="hint">영문 소문자·숫자·밑줄 3~20자</p>
+          </div>
+
+          <div class="field">
+            <label for="su-pw">비밀번호</label>
+            <input id="su-pw" type="password" autocomplete="new-password" minlength="6" required>
+            <p class="hint">영문자와 특수문자를 포함해 6자 이상</p>
+          </div>
+
+          <button class="btn btn-primary" type="submit" style="width:100%" id="su-go">신청하기</button>
+        </form>
+
+        <p class="switch-line">
+          <span>이미 계정이 있으신가요?</span>
+          <button type="button" id="back-login">로그인</button>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 학급 만들기 / 명단 등록 ────────────────────── -->
+  <section class="screen" data-screen="setup">
+    <div class="center-wrap">
+      <div class="auth-card">
+        <p class="brand">첫 설정</p>
+
+        <div id="setup-class">
+          <h1>우리 반을 만들어요</h1>
+          <p class="lead">학급을 만들면 학년·반에서 자동으로 만들어진 5글자 코드가 나옵니다. 예) 2학년 1반 → YS201</p>
+          <form id="class-form">
+            <div class="row2">
+              <div class="field">
+                <label for="grade">학년</label>
+                <input id="grade" type="number" min="1" max="6" value="3" required>
+              </div>
+              <div class="field">
+                <label for="classno">반</label>
+                <input id="classno" type="number" min="1" max="20" value="1" required>
+              </div>
+            </div>
+            <div class="field">
+              <label for="tname">담임 이름</label>
+              <input id="tname" type="text" required placeholder="김선생">
+            </div>
+            <button class="btn btn-primary" type="submit" style="width:100%">학급 만들기</button>
+          </form>
+        </div>
+
+        <div id="setup-roster" hidden>
+          <h1>이제 명단을 넣어요</h1>
+          <p class="lead">학급이 만들어졌습니다. 이어서 학생 명단을 채워주세요.</p>
+          <button class="btn btn-primary" type="button" id="go-roster" style="width:100%">
+            명단 만들기
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 명단 관리 ──────────────────────────────────── -->
+  <section class="screen" data-screen="roster">
+    <div class="sheet-wrap">
+      <div class="sheet">
+        <div class="sheet-head">
+          <div>
+            <h1>명단 관리</h1>
+            <p class="sub" id="roster-class"></p>
+          </div>
+          <button type="button" class="close-x" id="roster-close" aria-label="닫기" title="닫기">×</button>
+        </div>
+
+        <div class="sheet-body">
+          <p class="lead">이름 칸을 눌러 바로 고칠 수 있어요. 번호는 순서대로 자동으로 매겨집니다.</p>
+
+          <table class="roster-table">
+            <thead>
+              <tr><th style="width:72px">번호</th><th>이름</th><th style="width:120px">기록</th><th style="width:64px"></th></tr>
+            </thead>
+            <tbody id="roster-rows"></tbody>
+          </table>
+
+          <div class="roster-tools">
+            <button class="btn btn-quiet" type="button" id="roster-add" style="min-height:44px">
+              + 학생 한 명 추가
+            </button>
+            <span class="roster-count" id="roster-count"></span>
+          </div>
+        </div>
+
+        <div class="sheet-foot">
+          <button class="btn btn-quiet" type="button" id="roster-cancel">취소</button>
+          <button class="btn btn-primary" type="button" id="roster-save">명단 저장</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 대시보드 ───────────────────────────────────── -->
+  <section class="screen" data-screen="board">
+    <header class="head">
+      <div class="left">
+        <h1>EmotionInside</h1>
+        <span class="cls" id="h-class"></span>
+        <span class="code-chip">
+          <span id="h-code"></span>
+          <button type="button" id="copy-code">복사</button>
+        </span>
+      </div>
+      <div class="right">
+        <button class="btn btn-quiet" type="button" id="add-students">명단 관리</button>
+        <button class="btn btn-quiet" type="button" id="change-pw">비밀번호 변경</button>
+        <button class="btn btn-quiet" type="button" id="signout">로그아웃</button>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <div class="datenav">
+        <button class="nav" type="button" id="prev-day" aria-label="이전 날">‹</button>
+        <input type="date" id="the-date">
+        <button class="nav" type="button" id="next-day" aria-label="다음 날">›</button>
+        <button class="btn btn-quiet" type="button" id="today" style="min-height:40px">오늘</button>
+      </div>
+
+      <div class="stats" id="stats"></div>
+
+      <div class="export">
+        <button class="btn btn-primary" type="button" id="export-btn" style="min-height:44px">
+          구글시트로 내보내기
+        </button>
+        <div class="menu" id="export-menu" hidden>
+          <p class="group">클립보드로 복사 — 시트에 Ctrl+V</p>
+          <button type="button" data-act="copy" data-range="day">이 날짜</button>
+          <button type="button" data-act="copy" data-range="week">이번 주</button>
+          <button type="button" data-act="copy" data-range="month">이번 달</button>
+          <button type="button" data-act="copy" data-range="all">전체 기간</button>
+          <p class="group">CSV 파일로 저장</p>
+          <button type="button" data-act="csv" data-range="month">이번 달</button>
+          <button type="button" data-act="csv" data-range="all">전체 기간</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 관리자에게만 보인다 -->
+    <div class="signup-banner" id="signup-banner" hidden>
+      <h3>가입 신청 <span id="signup-count"></span></h3>
+      <ul class="signup-list" id="signup-list"></ul>
+    </div>
+
+    <div class="watch-banner" id="watch-banner" hidden>
+      <h3>살펴볼 학생</h3>
+      <div class="chips" id="watch-chips"></div>
+    </div>
+
+    <ul class="cards" id="cards"></ul>
+    <p class="empty-state" id="empty" hidden></p>
+  </section>
+
+  <!-- ── 학생 상세 ─────────────────────────────────── -->
+  <dialog class="detail" id="detail">
+    <div class="d-head">
+      <div>
+        <h2 id="d-name"></h2>
+        <p class="sub" id="d-range"></p>
+      </div>
+      <button class="btn btn-quiet" type="button" id="d-close" style="min-height:40px">닫기</button>
+    </div>
+    <div class="d-body">
+      <div class="week-nav">
+        <button type="button" id="d-prev">‹ 지난주</button>
+        <span class="label" id="d-week"></span>
+        <button type="button" id="d-next">다음주 ›</button>
+      </div>
+      <div class="chart-box" id="chart"></div>
+      <ul class="memo-list" id="d-memos"></ul>
+    </div>
+    <div class="d-foot">
+      <button class="btn btn-quiet" type="button" id="d-unlock">이 날짜 기록 지우기 (다시 쓰게 하기)</button>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '../assets/config.js';
+
+    const db = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+    const $ = (id) => document.getElementById(id);
+
+    let cls = null;
+    let students = [];
+    let emotions = new Map();
+    let watch = new Map();
+    let dayRows = new Map();     // student_id -> checkin
+    let detailFor = null;
+    let detailWeek = null;
+
+    // ── 날짜 도구 ────────────────────────────────────
+    // 로컬 시간대 기준으로 다룬다. toISOString 은 UTC 로 밀려 하루가 어긋난다.
+
+    const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const parse = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+    const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+
+    function mondayOf(d) {
+      const x = new Date(d);
+      const dow = x.getDay();            // 일요일 0
+      x.setDate(x.getDate() - (dow === 0 ? 6 : dow - 1));
+      return x;
+    }
+
+    const KOR_DOW = ['월', '화', '수', '목', '금'];
+    const fmtKo = (d) => `${d.getMonth() + 1}월 ${d.getDate()}일`;
+
+    // ── 공통 ────────────────────────────────────────
+
+    let toastTimer;
+    function toast(msg, tone) {
+      const el = $('toast');
+      el.textContent = msg;
+      el.dataset.tone = tone || 'ok';
+      el.dataset.show = '1';
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { el.dataset.show = '0'; }, 3400);
+    }
+
+    const show = (s) => { document.body.dataset.screen = s; };
+
+    // ── 인증 ────────────────────────────────────────
+
+    // Supabase Auth 는 내부적으로 이메일을 쓴다. 선생님은 아이디만 입력하고,
+    // 여기서 고정 도메인을 붙여 넘긴다. 실제로 메일이 오가지는 않는다.
+    const ID_DOMAIN = 'emotioninside.local';
+    const toEmail = (loginId) => `${loginId.trim().toLowerCase()}@${ID_DOMAIN}`;
+
+    /** 영문자와 특수문자를 포함한 6자 이상. DB 의 check_password_rule 과 같은 규칙. */
+    function passwordProblem(pw) {
+      if (pw.length < 6) return '비밀번호는 6자 이상이어야 합니다.';
+      if (!/[A-Za-z]/.test(pw)) return '비밀번호에 영문자가 들어가야 합니다.';
+      if (!/[^A-Za-z0-9]/.test(pw)) return '비밀번호에 특수문자가 하나 이상 들어가야 합니다.';
+      return null;
+    }
+
+    // ── 가입 신청 ───────────────────────────────────
+
+    const codeFor = (grade, classNo) =>
+      `YS${grade}${String(classNo).padStart(2, '0')}`;
+
+    function syncSignupCode() {
+      const g = Number($('su-grade').value);
+      const c = Number($('su-classno').value);
+      // 선생님이 코드를 직접 고쳤다면 덮어쓰지 않는다.
+      if (!$('su-code').dataset.touched && g >= 1 && c >= 1) {
+        $('su-code').value = codeFor(g, c);
+      }
+    }
+
+    $('su-grade').addEventListener('input', syncSignupCode);
+    $('su-classno').addEventListener('input', syncSignupCode);
+    $('su-code').addEventListener('input', () => { $('su-code').dataset.touched = '1'; });
+
+    $('go-signup').addEventListener('click', () => {
+      $('su-code').dataset.touched = '';
+      syncSignupCode();
+      show('signup');
+    });
+
+    $('back-login').addEventListener('click', () => show('auth'));
+
+    $('signup-form').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const loginId = $('su-id').value.trim().toLowerCase();
+      const pw = $('su-pw').value;
+      const code = $('su-code').value.trim().toUpperCase();
+
+      if (!/^[a-z0-9_]{3,20}$/.test(loginId)) {
+        toast('아이디는 영문 소문자·숫자·밑줄 3~20자입니다.', 'bad');
+        return;
+      }
+      const problem = passwordProblem(pw);
+      if (problem) { toast(problem, 'bad'); return; }
+      if (code.length !== 5) { toast('학급코드는 5글자입니다.', 'bad'); return; }
+
+      $('su-go').disabled = true;
+      const { data, error } = await db.rpc('request_teacher_account', {
+        p_login_id: loginId,
+        p_password: pw,
+        p_teacher_name: $('su-name').value.trim(),
+        p_grade: Number($('su-grade').value),
+        p_class_no: Number($('su-classno').value),
+        p_join_code: code,
+      });
+      $('su-go').disabled = false;
+
+      if (error) { toast(error.message, 'bad'); return; }
+
+      $('signup-form').reset();
+      $('su-code').dataset.touched = '';
+      toast(`신청이 접수되었습니다. 승인되면 학급코드 ${data} 로 시작할 수 있어요.`);
+      show('auth');
+    });
+
+    // ── 가입 신청 승인 (관리자) ─────────────────────
+
+    async function loadSignups() {
+      const banner = $('signup-banner');
+      const { data, error } = await db
+        .from('teacher_signups')
+        .select('id, login_id, teacher_name, grade, class_no, join_code, requested_at')
+        .eq('status', 'pending')
+        .order('requested_at');
+
+      // 관리자가 아니면 정책상 빈 배열이 온다. 그때는 아예 감춘다.
+      if (error || !data || data.length === 0) { banner.hidden = true; return; }
+
+      banner.hidden = false;
+      $('signup-count').textContent = `${data.length}건`;
+
+      const list = $('signup-list');
+      list.innerHTML = '';
+
+      for (const s of data) {
+        const li = document.createElement('li');
+
+        const who = document.createElement('span');
+        who.className = 'who';
+        const nm = document.createElement('b');
+        nm.textContent = `${s.grade}학년 ${s.class_no}반 ${s.teacher_name}`;
+        const meta = document.createElement('span');
+        meta.className = 'meta';
+        meta.textContent = `아이디 ${s.login_id} · 코드 ${s.join_code}`;
+        who.append(nm, meta);
+
+        const acts = document.createElement('span');
+        acts.className = 'acts';
+
+        const ok = document.createElement('button');
+        ok.type = 'button';
+        ok.className = 'ok';
+        ok.textContent = '승인';
+        ok.addEventListener('click', async () => {
+          ok.disabled = true;
+          const { data: code, error: err } = await db.rpc('approve_signup', { p_id: s.id });
+          if (err) { ok.disabled = false; toast(err.message, 'bad'); return; }
+          toast(`승인했습니다. ${s.teacher_name} 선생님 학급코드는 ${code} 입니다.`);
+          await loadSignups();
+        });
+
+        const no = document.createElement('button');
+        no.type = 'button';
+        no.className = 'no';
+        no.textContent = '거절';
+        no.addEventListener('click', async () => {
+          const reason = prompt('거절 사유를 적어주세요. (선택)');
+          if (reason === null) return;
+          const { error: err } = await db.rpc('reject_signup', { p_id: s.id, p_reason: reason });
+          if (err) { toast(err.message, 'bad'); return; }
+          toast('신청을 거절했습니다.');
+          await loadSignups();
+        });
+
+        acts.append(ok, no);
+        li.append(who, acts);
+        list.append(li);
+      }
+    }
+
+    $('auth-form').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const loginId = $('login-id').value.trim().toLowerCase();
+      const password = $('password').value;
+
+      if (!/^[a-z0-9_]{3,20}$/.test(loginId)) {
+        toast('아이디는 영문 소문자·숫자·밑줄 3~20자입니다.', 'bad');
+        return;
+      }
+
+      $('auth-go').disabled = true;
+      const { error } = await db.auth.signInWithPassword({
+        email: toEmail(loginId),
+        password,
+      });
+      $('auth-go').disabled = false;
+
+      if (error) {
+        // 내부 이메일 형식이 그대로 노출되면 선생님만 헷갈린다.
+        const msg = /invalid login credentials/i.test(error.message)
+          ? '아이디나 비밀번호가 맞지 않습니다.'
+          : error.message;
+        toast(msg, 'bad');
+        return;
+      }
+      await afterLogin();
+    });
+
+    // ── 비밀번호 바꾸기 ─────────────────────────────
+    // 처음 받은 임시 비밀번호를 선생님이 직접 바꿀 수 있어야 한다.
+
+    $('change-pw').addEventListener('click', async () => {
+      const pw = prompt('새 비밀번호를 입력하세요.\n영문자와 특수문자를 포함해 6자 이상입니다.');
+      if (pw === null) return;
+
+      const problem = passwordProblem(pw);
+      if (problem) { toast(problem, 'bad'); return; }
+
+      const { error } = await db.auth.updateUser({ password: pw });
+      if (error) { toast(error.message, 'bad'); return; }
+      toast('비밀번호를 바꿨습니다.');
+    });
+
+    $('signout').addEventListener('click', async () => {
+      await db.auth.signOut();
+      cls = null; students = [];
+      show('auth');
+    });
+
+    // ── 학급 · 명단 ─────────────────────────────────
+
+    $('class-form').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const { data: { user } } = await db.auth.getUser();
+      const { data, error } = await db.from('classes').insert({
+        teacher_id: user.id,
+        grade: Number($('grade').value),
+        class_no: Number($('classno').value),
+        teacher_name: $('tname').value.trim(),
+      }).select().single();
+
+      if (error) { toast(error.message, 'bad'); return; }
+      cls = data;
+      $('setup-class').hidden = true;
+      $('setup-roster').hidden = false;
+    });
+
+    // ── 명단 관리 (표 편집) ─────────────────────────
+    // 한 학급 25명을 기본으로 잡되 한 명씩 늘리고 줄일 수 있다.
+
+    const ROSTER_DEFAULT = 25;
+    let rosterRows = [];   // { id: string|null, name: string, marks: number }
+
+    async function openRoster() {
+      const { data: list, error } = await db.from('students')
+        .select('id, no, name').eq('class_id', cls.id).order('no');
+      if (error) { toast(error.message, 'bad'); return; }
+
+      // 학생을 지우면 그 학생의 감정 기록도 함께 사라진다. 미리 몇 건인지 보여준다.
+      const marks = new Map();
+      if (list.length) {
+        const { data: ck } = await db.from('checkins')
+          .select('student_id').in('student_id', list.map((s) => s.id));
+        for (const c of ck ?? []) marks.set(c.student_id, (marks.get(c.student_id) ?? 0) + 1);
+      }
+
+      rosterRows = list.map((s) => ({
+        id: s.id, name: s.name, marks: marks.get(s.id) ?? 0,
+      }));
+
+      // 처음이라면 표준 인원만큼 빈 줄을 깔아둔다.
+      while (rosterRows.length < ROSTER_DEFAULT && list.length === 0) {
+        rosterRows.push({ id: null, name: '', marks: 0 });
+      }
+
+      $('roster-class').textContent =
+        `${cls.grade}학년 ${cls.class_no}반 · 학급코드 ${cls.join_code}`;
+      drawRoster();
+      show('roster');
+    }
+
+    function drawRoster() {
+      const body = $('roster-rows');
+      body.innerHTML = '';
+
+      rosterRows.forEach((row, i) => {
+        const tr = document.createElement('tr');
+
+        const tdNo = document.createElement('td');
+        tdNo.className = 'rn';
+        tdNo.textContent = String(i + 1);
+
+        const tdName = document.createElement('td');
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = row.name;
+        input.maxLength = 20;
+        input.placeholder = '이름';
+        input.setAttribute('aria-label', `${i + 1}번 학생 이름`);
+        if (!row.name.trim()) input.dataset.empty = '1';
+        input.addEventListener('input', () => {
+          row.name = input.value;
+          input.dataset.empty = input.value.trim() ? '0' : '1';
+        });
+        // 엔터를 누르면 다음 칸으로. 25명을 연달아 칠 때 편하다.
+        input.addEventListener('keydown', (ev) => {
+          if (ev.key !== 'Enter') return;
+          ev.preventDefault();
+          const next = body.querySelectorAll('input')[i + 1];
+          if (next) next.focus();
+          else { addRosterRow(); body.querySelectorAll('input')[i + 1]?.focus(); }
+        });
+        tdName.append(input);
+
+        const tdMarks = document.createElement('td');
+        tdMarks.className = 'marks';
+        tdMarks.dataset.has = row.marks > 0 ? '1' : '0';
+        tdMarks.textContent = row.marks > 0 ? `${row.marks}건` : '—';
+
+        const tdDel = document.createElement('td');
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'row-del';
+        del.textContent = '×';
+        del.title = '이 학생 지우기';
+        del.setAttribute('aria-label', `${i + 1}번 학생 지우기`);
+        del.addEventListener('click', () => removeRosterRow(i));
+        tdDel.append(del);
+
+        tr.append(tdNo, tdName, tdMarks, tdDel);
+        body.append(tr);
+      });
+
+      $('roster-count').textContent = `모두 ${rosterRows.length}명`;
+    }
+
+    function addRosterRow() {
+      rosterRows.push({ id: null, name: '', marks: 0 });
+      drawRoster();
+    }
+
+    function removeRosterRow(i) {
+      const row = rosterRows[i];
+      if (row.marks > 0) {
+        const name = row.name.trim() || `${i + 1}번`;
+        if (!confirm(`${name} 학생을 지우면 그동안 쌓인 감정 기록 ${row.marks}건도 함께 사라집니다.\n정말 지울까요?`)) return;
+      }
+      rosterRows.splice(i, 1);
+      drawRoster();
+    }
+
+    $('roster-add').addEventListener('click', () => {
+      addRosterRow();
+      const inputs = $('roster-rows').querySelectorAll('input');
+      inputs[inputs.length - 1]?.focus();
+    });
+
+    $('go-roster').addEventListener('click', () => void openRoster());
+    $('add-students').addEventListener('click', () => void openRoster());
+
+    function leaveRoster() {
+      if (cls) { void loadBoard(); } else { show('auth'); }
+    }
+
+    $('roster-close').addEventListener('click', leaveRoster);
+    $('roster-cancel').addEventListener('click', leaveRoster);
+
+    $('roster-save').addEventListener('click', async () => {
+      const empty = rosterRows.findIndex((r) => !r.name.trim());
+      if (empty >= 0) {
+        toast(`${empty + 1}번 칸이 비어 있어요. 이름을 넣거나 그 줄을 지워주세요.`, 'bad');
+        $('roster-rows').querySelectorAll('input')[empty]?.focus();
+        return;
+      }
+      if (rosterRows.length === 0) {
+        toast('학생을 한 명 이상 넣어주세요.', 'bad');
+        return;
+      }
+
+      const payload = rosterRows.map((r, i) => ({
+        id: r.id, no: i + 1, name: r.name.trim(),
+      }));
+
+      $('roster-save').disabled = true;
+      const { data, error } = await db.rpc('save_roster', {
+        p_class_id: cls.id,
+        p_rows: payload,
+      });
+      $('roster-save').disabled = false;
+
+      if (error) { toast(error.message, 'bad'); return; }
+      toast(`명단을 저장했습니다. 모두 ${data}명입니다.`);
+      await loadBoard();
+    });
+
+    $('copy-code').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(cls.join_code);
+        toast('학급코드를 복사했습니다.');
+      } catch {
+        toast('복사가 안 됐어요. 코드를 직접 적어주세요.', 'bad');
+      }
+    });
+
+    // ── 자료 읽기 ───────────────────────────────────
+
+    async function loadEmotions() {
+      const { data, error } = await db.from('emotions')
+        .select('code, label, valence, color, is_watch, bucket').order('sort_order');
+      if (error) throw error;
+      emotions = new Map(data.map((e) => [e.code, e]));
+    }
+
+    async function loadClass() {
+      const { data, error } = await db.from('classes').select('*').limit(1).maybeSingle();
+      if (error) throw error;
+      cls = data;
+      return data;
+    }
+
+    async function loadStudents() {
+      const { data, error } = await db.from('students')
+        .select('id, no, name').eq('class_id', cls.id).order('no');
+      if (error) throw error;
+      students = data;
+    }
+
+    async function loadDay(date) {
+      dayRows = new Map();
+      if (!students.length) return;
+      const { data, error } = await db.from('checkins')
+        .select('id, student_id, emotion_code, note, condition_score, checkin_date')
+        .eq('checkin_date', date)
+        .in('student_id', students.map((s) => s.id));
+      if (error) throw error;
+      for (const r of data) dayRows.set(r.student_id, r);
+    }
+
+    async function loadWatch() {
+      watch = new Map();
+      const { data, error } = await db.from('v_watchlist').select('*');
+      if (error) return;          // 뷰가 비어 있어도 대시보드는 계속 떠야 한다
+      for (const w of data) watch.set(w.student_id, w);
+    }
+
+    // ── 그리기 ──────────────────────────────────────
+
+    function draw() {
+      $('h-class').textContent =
+        cls.label ?? `${cls.grade}학년 ${cls.class_no}반 · ${cls.teacher_name}`;
+      $('h-code').textContent = cls.join_code;
+
+      const list = $('cards');
+      list.innerHTML = '';
+
+      if (!students.length) {
+        $('empty').textContent = '아직 등록된 학생이 없습니다. 「명단 관리」에서 이름을 넣어주세요.';
+        $('empty').hidden = false;
+        $('stats').innerHTML = '';
+        $('watch-banner').hidden = true;
+        return;
+      }
+      $('empty').hidden = true;
+
+      let good = 0, soso = 0, hard = 0, notes = 0;
+
+      for (const s of students) {
+        const row = dayRows.get(s.id);
+        const e = row ? emotions.get(row.emotion_code) : null;
+
+        // 분류는 emotions.bucket 을 그대로 따른다.
+        // valence 로 계산하면 부럽이(-1)가 힘듦으로 빠져 담임의 분류와 어긋난다.
+        if (e) {
+          if (e.bucket === 'good') good++;
+          else if (e.bucket === 'hard') hard++;
+          else soso++;
+        }
+        if (row?.note) notes++;
+
+        const li = document.createElement('li');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'card-s';
+        btn.dataset.state = row ? 'done' : 'none';
+        btn.dataset.hasNote = row?.note ? '1' : '0';
+        if (e) {
+          btn.style.setProperty('--em', e.color);
+          btn.style.setProperty('--em-soft', e.color + '22');
+          btn.style.setProperty('--em-deep', e.color);
+        }
+
+        if (watch.has(s.id)) {
+          const b = document.createElement('span');
+          b.className = 'badge';
+          b.textContent = '살펴보기';
+          const w = watch.get(s.id);
+          b.title = w.basis_dates
+            .map((d, i) => `${d} ${w.basis_labels[i]}`).join(' · ');
+          btn.append(b);
+        }
+
+        const top = document.createElement('div');
+        top.className = 'top';
+
+        const face = document.createElement('img');
+        face.className = 'face';
+        face.alt = '';
+        if (e) face.src = `../assets/characters/tile/${e.code}@256.webp`;
+        else face.style.visibility = 'hidden';
+
+        const who = document.createElement('div');
+        who.className = 'who';
+        const nm = document.createElement('div');
+        nm.className = 'nm';
+        nm.textContent = s.name;
+        const no = document.createElement('div');
+        no.className = 'no';
+        no.textContent = `${s.no}번`;
+        who.append(nm, no);
+        top.append(face, who);
+
+        btn.append(top);
+
+        if (e) {
+          const tags = document.createElement('span');
+          tags.className = 'tags';
+
+          const tag = document.createElement('span');
+          tag.className = 'emo';
+          tag.textContent = e.label;
+          tags.append(tag);
+
+          // 학생이 직접 매긴 컨디션. 낮을수록 눈에 띄게 한다.
+          if (row.condition_score != null) {
+            const sc = document.createElement('span');
+            sc.className = 'score';
+            sc.dataset.low = row.condition_score <= 2 ? '1' : '0';
+            sc.textContent = `컨디션 ${row.condition_score}`;
+            tags.append(sc);
+          }
+
+          btn.append(tags);
+        }
+
+        if (row?.note) {
+          const m = document.createElement('p');
+          m.className = 'memo';
+          m.textContent = row.note;
+          btn.append(m);
+        } else if (row) {
+          const m = document.createElement('p');
+          m.className = 'empty';
+          m.textContent = '한마디 없음';
+          btn.append(m);
+        } else {
+          const m = document.createElement('p');
+          m.className = 'empty';
+          m.textContent = '미제출';
+          btn.append(m);
+        }
+
+        btn.addEventListener('click', () => openDetail(s));
+        li.append(btn);
+        list.append(li);
+      }
+
+      const done = good + soso + hard;
+      $('stats').innerHTML = '';
+      const stats = [
+        ['제출', `${done} / ${students.length}`, ''],
+        ['한마디', `${notes}`, ''],
+        ['긍정', `${good}`, 'good'],
+        ['보통', `${soso}`, ''],
+        ['힘듦', `${hard}`, 'hard'],
+      ];
+      for (const [label, val, tone] of stats) {
+        const el = document.createElement('span');
+        el.className = 'stat';
+        if (tone) el.dataset.tone = tone;
+        el.textContent = label;
+        const b = document.createElement('b');
+        b.textContent = val;
+        el.append(b);
+        $('stats').append(el);
+      }
+
+      const flagged = students.filter((s) => watch.has(s.id));
+      $('watch-banner').hidden = !flagged.length;
+      $('watch-chips').innerHTML = '';
+      for (const s of flagged) {
+        const w = watch.get(s.id);
+        const c = document.createElement('span');
+        c.className = 'watch-chip';
+        c.textContent = `${s.name} — ${w.basis_labels.join(' · ')}`;
+        $('watch-chips').append(c);
+      }
+    }
+
+    // ── 학생 상세 · 주간 차트 ───────────────────────
+
+    async function openDetail(s) {
+      detailFor = s;
+      detailWeek = mondayOf(parse($('the-date').value));
+      $('d-name').textContent = `${s.no}번 ${s.name}`;
+      await drawWeek();
+      $('detail').showModal();
+    }
+
+    async function drawWeek() {
+      const mon = detailWeek;
+      const fri = addDays(mon, 4);
+      $('d-week').textContent = `${fmtKo(mon)} ~ ${fmtKo(fri)}`;
+      $('d-range').textContent = '월요일부터 금요일까지, 학생이 고른 컨디션 흐름';
+
+      const { data, error } = await db.from('checkins')
+        .select('id, checkin_date, emotion_code, note, condition_score')
+        .eq('student_id', detailFor.id)
+        .gte('checkin_date', ymd(mon))
+        .lte('checkin_date', ymd(fri))
+        .order('checkin_date');
+
+      if (error) { toast(error.message, 'bad'); return; }
+
+      const byDate = new Map(data.map((r) => [r.checkin_date, r]));
+      const days = [0, 1, 2, 3, 4].map((i) => {
+        const d = addDays(mon, i);
+        const row = byDate.get(ymd(d)) ?? null;
+        return { date: d, row, emo: row ? emotions.get(row.emotion_code) : null };
+      });
+
+      $('chart').innerHTML = chartSvg(days);
+
+      const memos = $('d-memos');
+      memos.innerHTML = '';
+      const withNote = days.filter((d) => d.row?.note);
+      if (!withNote.length) {
+        const li = document.createElement('li');
+        li.style.borderLeftColor = '#ddd';
+        li.innerHTML = '<p class="what" style="color:#9a92b8">이 주에 남긴 한마디가 없습니다.</p>';
+        memos.append(li);
+      }
+      for (const d of withNote) {
+        const li = document.createElement('li');
+        li.style.setProperty('--em', d.emo?.color ?? '#ccc');
+        const when = document.createElement('p');
+        when.className = 'when';
+        const score = d.row.condition_score != null ? ` · 컨디션 ${d.row.condition_score}` : '';
+        when.textContent = `${fmtKo(d.date)} · ${d.emo?.label ?? ''}${score}`;
+        const what = document.createElement('p');
+        what.className = 'what';
+        what.textContent = d.row.note;
+        li.append(when, what);
+        memos.append(li);
+      }
+    }
+
+    // 가로 5칸(월~금), 세로는 학생이 직접 고른 컨디션 1~5.
+    // 감정에서 점수를 추정하지 않는다 — 웃는 캐릭터를 골라도 컨디션이 낮은 날이 있다.
+    // 점 색은 그날 고른 캐릭터 색을 그대로 써서 감정도 함께 읽히게 한다.
+    function chartSvg(days) {
+      const W = 560, H = 250, L = 78, R = 22, T = 22, B = 46;
+      const pw = W - L - R, ph = H - T - B;
+      const x = (i) => L + (pw / 4) * i;
+      const y = (s) => T + ((5 - s) / 4) * ph;
+
+      const levels = [
+        [5, '아주 좋음'], [4, '좋음'], [3, '보통'], [2, '힘듦'], [1, '많이 힘듦'],
+      ];
+
+      let g = '';
+      for (const [s, label] of levels) {
+        g += `<line x1="${L}" y1="${y(s)}" x2="${W - R}" y2="${y(s)}" `
+           + `stroke="${s === 3 ? '#c9c2e0' : '#e6e2f0'}" stroke-width="1"/>`;
+        g += `<text x="${L - 10}" y="${y(s) + 4}" text-anchor="end" `
+           + `font-size="12" font-weight="700" fill="#8a82a8">${s} ${label}</text>`;
+      }
+
+      for (let i = 0; i < 5; i++) {
+        g += `<text x="${x(i)}" y="${H - 18}" text-anchor="middle" `
+           + `font-size="13" font-weight="800" fill="#5b5378">${KOR_DOW[i]}</text>`;
+        g += `<text x="${x(i)}" y="${H - 3}" text-anchor="middle" `
+           + `font-size="10" font-weight="600" fill="#a49cc0">${days[i].date.getDate()}일</text>`;
+      }
+
+      const pts = days
+        .map((d, i) => {
+          const s = d.row?.condition_score;
+          return s == null ? null : { i, s, e: d.emo };
+        })
+        .filter(Boolean);
+
+      if (pts.length > 1) {
+        const path = pts.map((p) => `${x(p.i)},${y(p.s)}`).join(' ');
+        g += `<polyline points="${path}" fill="none" stroke="#7c6ac4" `
+           + `stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+      }
+
+      for (const p of pts) {
+        const label = `컨디션 ${p.s}${p.e ? ` · ${p.e.label}` : ''}`;
+        // title 은 도형의 자식이어야 마우스를 올렸을 때 이름이 뜬다.
+        g += `<g><circle cx="${x(p.i)}" cy="${y(p.s)}" r="11" fill="#fff" `
+           + `stroke="${p.e?.color ?? '#7c6ac4'}" stroke-width="4"/>`
+           + `<title>${label}</title></g>`;
+      }
+
+      // 컨디션 기능이 생기기 전 기록은 점수가 없다. 빈칸으로 두고 아래에 알린다.
+      const noScore = days.filter((d) => d.row && d.row.condition_score == null).length;
+      if (noScore) {
+        g += `<text x="${W - R}" y="${T - 6}" text-anchor="end" `
+           + `font-size="11" font-weight="700" fill="#a49cc0">`
+           + `컨디션을 고르기 전 기록 ${noScore}일은 빠져 있습니다</text>`;
+      }
+
+      if (!pts.length) {
+        g += `<text x="${W / 2}" y="${T + ph / 2}" text-anchor="middle" `
+           + `font-size="14" font-weight="700" fill="#a49cc0">`
+           + `${noScore ? '이 주에는 컨디션 점수가 없습니다' : '이 주에는 기록이 없습니다'}</text>`;
+      }
+
+      return `<svg viewBox="0 0 ${W} ${H}" role="img" `
+           + `aria-label="월요일부터 금요일까지 컨디션 추이">${g}</svg>`;
+    }
+
+    $('d-prev').addEventListener('click', () => { detailWeek = addDays(detailWeek, -7); drawWeek(); });
+    $('d-next').addEventListener('click', () => { detailWeek = addDays(detailWeek, 7); drawWeek(); });
+    $('d-close').addEventListener('click', () => $('detail').close());
+
+    $('d-unlock').addEventListener('click', async () => {
+      const date = $('the-date').value;
+      const row = dayRows.get(detailFor.id);
+      if (!row) { toast('이 날짜에는 지울 기록이 없습니다.'); return; }
+      if (!confirm(`${detailFor.name} 학생의 ${date} 기록을 지울까요?\n학생이 다시 입력할 수 있게 됩니다.`)) return;
+
+      const { error } = await db.from('checkins').delete().eq('id', row.id);
+      if (error) { toast(error.message, 'bad'); return; }
+      toast('기록을 지웠습니다. 학생이 다시 쓸 수 있어요.');
+      $('detail').close();
+      await refresh();
+    });
+
+    // ── 내보내기 ────────────────────────────────────
+
+    $('export-btn').addEventListener('click', () => {
+      $('export-menu').hidden = !$('export-menu').hidden;
+    });
+
+    document.addEventListener('click', (ev) => {
+      if (!ev.target.closest('.export')) $('export-menu').hidden = true;
+    });
+
+    $('export-menu').addEventListener('click', async (ev) => {
+      const b = ev.target.closest('button[data-act]');
+      if (!b) return;
+      $('export-menu').hidden = true;
+      await doExport(b.dataset.act, b.dataset.range);
+    });
+
+    function rangeFor(kind) {
+      const d = parse($('the-date').value);
+      if (kind === 'day') return [ymd(d), ymd(d)];
+      if (kind === 'week') { const m = mondayOf(d); return [ymd(m), ymd(addDays(m, 6))]; }
+      if (kind === 'month') {
+        return [ymd(new Date(d.getFullYear(), d.getMonth(), 1)),
+                ymd(new Date(d.getFullYear(), d.getMonth() + 1, 0))];
+      }
+      return ['1900-01-01', '2999-12-31'];
+    }
+
+    async function doExport(act, kind) {
+      const [from, to] = rangeFor(kind);
+      const { data, error } = await db.from('checkins')
+        .select('checkin_date, emotion_code, note, condition_score, students!inner(no, name, class_id)')
+        .eq('students.class_id', cls.id)
+        .gte('checkin_date', from)
+        .lte('checkin_date', to)
+        .order('checkin_date');
+
+      if (error) { toast(error.message, 'bad'); return; }
+      if (!data.length) { toast('그 기간에는 기록이 없습니다.'); return; }
+
+      // 점수 칸은 감정의 valence 가 아니라 학생이 직접 매긴 컨디션(1~5)을 쓴다.
+      const head = ['날짜', '번호', '이름', '감정', '컨디션', '한마디'];
+      const rows = data.map((r) => {
+        const e = emotions.get(r.emotion_code);
+        return [r.checkin_date, r.students.no, r.students.name,
+                e?.label ?? r.emotion_code, r.condition_score ?? '', r.note ?? ''];
+      });
+
+      if (act === 'copy') {
+        // 시트에 붙여넣을 때 칸이 깨지지 않도록 탭·줄바꿈은 공백으로 바꾼다.
+        const clean = (v) => String(v).replace(/[\t\r\n]+/g, ' ');
+        const tsv = [head, ...rows].map((r) => r.map(clean).join('\t')).join('\n');
+        try {
+          await navigator.clipboard.writeText(tsv);
+          toast(`${rows.length}건을 복사했습니다. 구글시트에서 Ctrl+V 하세요.`);
+        } catch {
+          toast('복사 권한이 없습니다. CSV 저장을 써주세요.', 'bad');
+        }
+        return;
+      }
+
+      const q = (v) => `"${String(v).replace(/"/g, '""')}"`;
+      const csv = [head, ...rows].map((r) => r.map(q).join(',')).join('\r\n');
+      // BOM 을 붙여야 엑셀·시트에서 한글이 깨지지 않는다.
+      const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `EmotionInside_${from}_${to}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast(`${rows.length}건을 CSV 로 저장했습니다.`);
+    }
+
+    // ── 날짜 이동 ───────────────────────────────────
+
+    $('the-date').addEventListener('change', refresh);
+    $('prev-day').addEventListener('click', () => {
+      $('the-date').value = ymd(addDays(parse($('the-date').value), -1));
+      refresh();
+    });
+    $('next-day').addEventListener('click', () => {
+      $('the-date').value = ymd(addDays(parse($('the-date').value), 1));
+      refresh();
+    });
+    $('today').addEventListener('click', () => {
+      $('the-date').value = ymd(new Date());
+      refresh();
+    });
+
+    async function refresh() {
+      await loadDay($('the-date').value);
+      await loadWatch();
+      draw();
+      await loadSignups();
+    }
+
+    // ── 시작 ────────────────────────────────────────
+
+    async function loadBoard() {
+      await loadStudents();
+      await refresh();
+      show('board');
+    }
+
+    async function afterLogin() {
+      await loadClass();
+      if (!cls) {
+        $('setup-class').hidden = false;
+        $('setup-roster').hidden = true;
+        show('setup');
+        return;
+      }
+      await loadBoard();
+    }
+
+    async function boot() {
+      $('the-date').value = ymd(new Date());
+      try {
+        await loadEmotions();
+      } catch (err) {
+        toast('감정 목록을 불러오지 못했습니다.', 'bad');
+      }
+
+      const { data: { session } } = await db.auth.getSession();
+      if (!session) { show('auth'); return; }
+      await afterLogin();
+    }
+
+    boot();
+  </script>
+</body>
+</html>

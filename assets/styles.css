@@ -1,0 +1,80 @@
+:root {
+  --bg: #fbfaf8;
+  --surface: #ffffff;
+  --line: #e3e0da;
+  --ink: #24211d;      /* 본문   14.9:1 */
+  --ink-soft: #5f5950; /* 보조    7.1:1 */
+  --accent: #7c4a2d;   /* 강조    7.5:1 */
+  --ok: #1f6b3f;
+  --warn: #a33a1f;
+  --radius: 12px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 2rem 1.25rem 4rem;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Pretendard', -apple-system, 'Segoe UI', 'Malgun Gothic', sans-serif;
+  line-height: 1.65;
+  word-break: keep-all;
+}
+
+main { max-width: 46rem; margin: 0 auto; }
+
+h1 { margin: 0 0 .25rem; font-size: 1.6rem; letter-spacing: -.02em; }
+.sub { margin: 0 0 2rem; color: var(--ink-soft); }
+
+/* 연결 상태 */
+.status {
+  display: flex; align-items: center; gap: .6rem;
+  padding: .9rem 1.1rem; margin-bottom: 2rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--ink-soft);
+  border-radius: var(--radius);
+}
+.status[data-state='ok']   { border-left-color: var(--ok); }
+.status[data-state='fail'] { border-left-color: var(--warn); }
+.status .dot { font-size: 1.1rem; }
+.status .msg { font-weight: 600; }
+.status .detail { color: var(--ink-soft); font-weight: 400; font-size: .9rem; }
+
+/* 감정 격자 — 3 × 3 */
+h2 { font-size: 1.05rem; margin: 0 0 .75rem; }
+
+.emotions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .75rem;
+  padding: 0; margin: 0;
+  list-style: none;
+}
+@media (max-width: 30rem) { .emotions { grid-template-columns: repeat(2, 1fr); } }
+
+.emotions li {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: .35rem;
+  min-height: 96px;
+  padding: .75rem .5rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.emotions .emoji { font-size: 1.9rem; line-height: 1; }
+.emotions .label { font-weight: 600; font-size: .95rem; }
+.emotions .valence { color: var(--ink-soft); font-size: .78rem; font-variant-numeric: tabular-nums; }
+
+.note {
+  margin-top: 2.5rem; padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft); font-size: .9rem;
+}
+.note code {
+  background: #f0ede8; padding: .1rem .35rem;
+  border-radius: 4px; font-size: .85em;
+}
+
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
