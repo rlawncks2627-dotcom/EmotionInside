@@ -1,0 +1,157 @@
+/* 공통 토큰과 기본 컴포넌트. 교사 대시보드를 이식할 때도 그대로 쓴다. */
+
+:root {
+  /* 인사이드아웃 본부의 보랏빛을 기준색으로 삼는다 */
+  --deep: #1b1233;
+  --deep-2: #2a1c4d;
+  --panel: rgba(255, 255, 255, 0.96);
+  --ink: #241a3d;
+  --ink-soft: #6b6288;
+  --line: #e4e0ee;
+
+  --joy: #f2b705;
+  --focus: #ffd44d;
+
+  --r-lg: 28px;
+  --r-md: 18px;
+
+  --shadow: 0 18px 40px rgba(20, 10, 45, 0.28);
+  --shadow-sm: 0 4px 14px rgba(20, 10, 45, 0.14);
+
+  --font: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic',
+    'Apple SD Gothic Neo', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  color: var(--ink);
+  background: var(--deep);
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+
+  /* 태블릿에서 글자가 드래그로 잡히면 아이들이 당황한다 */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+/* 키보드 사용자를 위한 초점 표시. 마우스·터치에는 나타나지 않는다. */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+/* ── 버튼 ───────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 0 26px;
+  border-radius: 999px;
+  font-size: 17px;
+  font-weight: 700;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+}
+
+.btn:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, #ffd764, var(--joy));
+  color: #4a3400;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── 알림 · 로딩 ────────────────────────────────────── */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%) translateY(140%);
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 14px 22px;
+  border-radius: var(--r-md);
+  background: #2b1c4f;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  z-index: 90;
+  pointer-events: none;
+}
+
+.toast[data-show='1'] {
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast[data-tone='bad'] {
+  background: #8e2f22;
+}
+
+.spinner {
+  width: 34px;
+  height: 34px;
+  border: 4px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

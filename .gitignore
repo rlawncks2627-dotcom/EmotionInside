@@ -1,0 +1,18 @@
+node_modules/
+dist/
+dist-ssr/
+
+*.local
+*.log
+npm-debug.log*
+
+.DS_Store
+Thumbs.db
+
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# .env 는 일부러 커밋한다.
+# 공개 키만 들어 있고, GitHub Pages 빌드 때 이 값이 필요하다.
+# 비밀 키를 추가하게 되면 그때는 반드시 여기에 .env 를 넣을 것.

@@ -1,0 +1,397 @@
+/* 학생용 태블릿 화면.
+   저학년도 쓰므로 터치 대상은 크게, 글자는 굵게, 단계는 한 번에 하나씩만 보여준다. */
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* 인사이드아웃 본부 배경. 원본이 작아서 살짝 흐리게 깔고 어둡게 덮는다.
+   그래야 어떤 캡쳐를 넣어도 위의 흰 글씨가 항상 읽힌다.
+   실제 이미지 주소는 배포 위치에 따라 달라져서 App 에서 인라인으로 넣는다. */
+.bg {
+  position: fixed;
+  inset: -40px;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  filter: blur(6px) saturate(1.15);
+  transform: scale(1.06);
+  z-index: -2;
+}
+
+.bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(20, 10, 45, 0.72) 0%,
+    rgba(20, 10, 45, 0.55) 40%,
+    rgba(20, 10, 45, 0.82) 100%
+  );
+}
+
+.wrap {
+  width: min(1000px, 100%);
+  margin: 0 auto;
+  padding: clamp(16px, 3vw, 32px);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.loading {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+}
+
+/* ── 머리말 ────────────────────────────────────────── */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: clamp(10px, 2vh, 20px);
+}
+
+.topbar .who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topbar .btn-ghost {
+  min-height: 38px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+.title {
+  color: #fff;
+  font-size: clamp(28px, 5vw, 46px);
+  font-weight: 800;
+  text-align: center;
+  text-shadow: 0 3px 20px rgba(0, 0, 0, 0.45);
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: clamp(14px, 2.2vw, 18px);
+  font-weight: 600;
+  text-align: center;
+  margin: 0 0 clamp(14px, 3vh, 26px);
+}
+
+/* ── 감정 타일 3×3 ─────────────────────────────────── */
+
+.emotions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(10px, 1.8vw, 18px);
+  list-style: none;
+  margin: 0 0 clamp(16px, 3vh, 26px);
+  padding: 0;
+}
+
+.emotion {
+  position: relative;
+  display: block;
+  width: 100%;
+  /* 최소 120px 보장 — 저학년 손가락으로도 빗나가지 않는 크기 */
+  min-width: 120px;
+  aspect-ratio: 1;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: #2a1c4d;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.16s cubic-bezier(0.2, 0.9, 0.3, 1.4), box-shadow 0.16s ease,
+    opacity 0.16s ease;
+}
+
+.emotion img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+/* 이름표는 타일 아래쪽에 얹는다. 캐릭터 얼굴을 가리지 않게 그라데이션으로 깐다. */
+.emotion .name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 26px 8px 10px;
+  background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.72));
+  color: #fff;
+  font-size: clamp(15px, 2.4vw, 21px);
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: -0.02em;
+  pointer-events: none;
+}
+
+.emotion:active {
+  transform: scale(0.96);
+}
+
+/* 하나를 고르면 그것만 살아나고 나머지는 물러난다 */
+.emotions[data-picked] .emotion {
+  opacity: 0.42;
+  transform: scale(0.94);
+}
+
+.emotions[data-picked] .emotion[aria-pressed='true'] {
+  opacity: 1;
+  transform: scale(1.04);
+  box-shadow: 0 0 0 5px var(--pick, var(--joy)), 0 16px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ── 메모 ──────────────────────────────────────────── */
+
+.note-box {
+  background: var(--panel);
+  border-radius: var(--r-lg);
+  padding: clamp(14px, 2.4vw, 22px);
+  box-shadow: var(--shadow);
+}
+
+.note-box label {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.note-box label span {
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.note-box textarea {
+  width: 100%;
+  min-height: 92px;
+  padding: 14px 16px;
+  border: 2px solid var(--line);
+  border-radius: var(--r-md);
+  font-family: inherit;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--ink);
+  background: #fff;
+  resize: none;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.note-box textarea::placeholder {
+  color: #a49ebb;
+}
+
+.note-box textarea:focus {
+  border-color: var(--pick, var(--joy));
+  outline: none;
+}
+
+.note-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.counter {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.counter[data-over='1'] {
+  color: #b3261e;
+}
+
+/* ── 이름 고르기 ───────────────────────────────────── */
+
+.roster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.student {
+  width: 100%;
+  min-height: 84px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px;
+  border-radius: var(--r-md);
+  background: var(--panel);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ink);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.12s ease;
+}
+
+.student:active {
+  transform: scale(0.97);
+}
+
+.student .no {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.student[data-done='1'] {
+  background: rgba(255, 255, 255, 0.34);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.student[data-done='1'] .no {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.student[data-done='1']::after {
+  content: '기록함';
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ── 학급코드 입력 ─────────────────────────────────── */
+
+.card {
+  width: min(460px, 100%);
+  margin: auto;
+  background: var(--panel);
+  border-radius: var(--r-lg);
+  padding: clamp(24px, 4vw, 38px);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.card h2 {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.card p {
+  color: var(--ink-soft);
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 22px;
+}
+
+.code-input {
+  width: 100%;
+  padding: 16px;
+  border: 2px solid var(--line);
+  border-radius: var(--r-md);
+  font-family: inherit;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: 18px;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.code-input:focus {
+  border-color: var(--joy);
+  outline: none;
+}
+
+/* ── 완료 화면 ─────────────────────────────────────── */
+
+.done {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 18px;
+  padding: 20px;
+}
+
+.done .pick-img {
+  width: clamp(180px, 34vw, 260px);
+  aspect-ratio: 1;
+  border-radius: 32px;
+  object-fit: cover;
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.3), 0 22px 50px rgba(0, 0, 0, 0.45);
+  animation: pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.done h2 {
+  color: #fff;
+  font-size: clamp(26px, 5vw, 40px);
+  font-weight: 800;
+}
+
+.done p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.done .said {
+  max-width: 520px;
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: var(--r-md);
+  padding: 14px 20px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+/* 가로가 넉넉하면 감정과 메모를 나란히 둔다 */
+@media (min-width: 900px) and (orientation: landscape) {
+  .emotion-layout {
+    display: grid;
+    grid-template-columns: 1.35fr 1fr;
+    gap: 22px;
+    align-items: start;
+  }
+
+  .emotions {
+    margin-bottom: 0;
+  }
+}

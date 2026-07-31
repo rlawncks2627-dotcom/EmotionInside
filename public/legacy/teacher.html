@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2a1c4d">
+  <title>EmotionInside — 담임 대시보드</title>
+  <link rel="stylesheet" href="../assets/app.css">
+  <link rel="stylesheet" href="../assets/teacher.css">
+</head>
+<body data-screen="loading">
+
+  <div class="boot"><div class="spinner" role="status" aria-label="불러오는 중"></div></div>
+
+  <!-- ── 로그인 ─────────────────────────────────────── -->
+  <section class="screen" data-screen="auth">
+    <div class="center-wrap">
+      <div class="auth-card">
+        <p class="brand">EmotionInside</p>
+        <h1 id="auth-title">담임 선생님, 안녕하세요</h1>
+        <p class="lead" id="auth-lead">학급 계정으로 로그인하세요.</p>
+
+        <form id="auth-form">
+          <div class="field">
+            <label for="email">이메일</label>
+            <input id="email" type="email" autocomplete="username" required>
+          </div>
+          <div class="field">
+            <label for="password">비밀번호</label>
+            <input id="password" type="password" autocomplete="current-password"
+                   minlength="6" required>
+            <p class="hint" id="pw-hint" hidden>6자 이상으로 정해주세요.</p>
+          </div>
+          <button class="btn btn-primary" type="submit" style="width:100%" id="auth-go">로그인</button>
+        </form>
+
+        <p class="switch-line">
+          <span id="switch-text">아직 계정이 없으신가요?</span>
+          <button type="button" id="switch-mode">계정 만들기</button>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 학급 만들기 / 명단 등록 ────────────────────── -->
+  <section class="screen" data-screen="setup">
+    <div class="center-wrap">
+      <div class="auth-card">
+        <p class="brand">첫 설정</p>
+
+        <div id="setup-class">
+          <h1>우리 반을 만들어요</h1>
+          <p class="lead">학급을 만들면 태블릿에서 쓸 6자리 코드가 나옵니다.</p>
+          <form id="class-form">
+            <div class="row2">
+              <div class="field">
+                <label for="grade">학년</label>
+                <input id="grade" type="number" min="1" max="6" value="3" required>
+              </div>
+              <div class="field">
+                <label for="classno">반</label>
+                <input id="classno" type="number" min="1" max="20" value="1" required>
+              </div>
+            </div>
+            <div class="field">
+              <label for="tname">담임 이름</label>
+              <input id="tname" type="text" required placeholder="김선생">
+            </div>
+            <button class="btn btn-primary" type="submit" style="width:100%">학급 만들기</button>
+          </form>
+        </div>
+
+        <div id="setup-roster" hidden>
+          <h1>명단을 넣어주세요</h1>
+          <p class="lead">엑셀에서 이름 칸을 복사해 그대로 붙여넣으면 됩니다.</p>
+          <form id="roster-form">
+            <div class="field">
+              <label for="names">학생 이름 (한 줄에 한 명)</label>
+              <textarea id="names" placeholder="김하늘&#10;이바다&#10;박소망" required></textarea>
+              <p class="hint">번호는 붙여넣은 순서대로 1번부터 매겨집니다.
+                「1  김하늘」처럼 번호가 함께 있어도 알아서 처리해요.</p>
+            </div>
+            <button class="btn btn-primary" type="submit" style="width:100%">명단 저장</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 대시보드 ───────────────────────────────────── -->
+  <section class="screen" data-screen="board">
+    <header class="head">
+      <div class="left">
+        <h1>EmotionInside</h1>
+        <span class="cls" id="h-class"></span>
+        <span class="code-chip">
+          <span id="h-code"></span>
+          <button type="button" id="copy-code">복사</button>
+        </span>
+      </div>
+      <div class="right">
+        <button class="btn btn-quiet" type="button" id="add-students">명단 관리</button>
+        <button class="btn btn-quiet" type="button" id="signout">로그아웃</button>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <div class="datenav">
+        <button class="nav" type="button" id="prev-day" aria-label="이전 날">‹</button>
+        <input type="date" id="the-date">
+        <button class="nav" type="button" id="next-day" aria-label="다음 날">›</button>
+        <button class="btn btn-quiet" type="button" id="today" style="min-height:40px">오늘</button>
+      </div>
+
+      <div class="stats" id="stats"></div>
+
+      <div class="export">
+        <button class="btn btn-primary" type="button" id="export-btn" style="min-height:44px">
+          구글시트로 내보내기
+        </button>
+        <div class="menu" id="export-menu" hidden>
+          <p class="group">클립보드로 복사 — 시트에 Ctrl+V</p>
+          <button type="button" data-act="copy" data-range="day">이 날짜</button>
+          <button type="button" data-act="copy" data-range="week">이번 주</button>
+          <button type="button" data-act="copy" data-range="month">이번 달</button>
+          <button type="button" data-act="copy" data-range="all">전체 기간</button>
+          <p class="group">CSV 파일로 저장</p>
+          <button type="button" data-act="csv" data-range="month">이번 달</button>
+          <button type="button" data-act="csv" data-range="all">전체 기간</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="watch-banner" id="watch-banner" hidden>
+      <h3>살펴볼 학생</h3>
+      <div class="chips" id="watch-chips"></div>
+    </div>
+
+    <ul class="cards" id="cards"></ul>
+    <p class="empty-state" id="empty" hidden></p>
+  </section>
+
+  <!-- ── 학생 상세 ─────────────────────────────────── -->
+  <dialog class="detail" id="detail">
+    <div class="d-head">
+      <div>
+        <h2 id="d-name"></h2>
+        <p class="sub" id="d-range"></p>
+      </div>
+      <button class="btn btn-quiet" type="button" id="d-close" style="min-height:40px">닫기</button>
+    </div>
+    <div class="d-body">
+      <div class="week-nav">
+        <button type="button" id="d-prev">‹ 지난주</button>
+        <span class="label" id="d-week"></span>
+        <button type="button" id="d-next">다음주 ›</button>
+      </div>
+      <div class="chart-box" id="chart"></div>
+      <ul class="memo-list" id="d-memos"></ul>
+    </div>
+    <div class="d-foot">
+      <button class="btn btn-quiet" type="button" id="d-unlock">이 날짜 기록 지우기 (다시 쓰게 하기)</button>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+    import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '../assets/config.js';
+
+    const db = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+    const $ = (id) => document.getElementById(id);
+
+    let cls = null;
+    let students = [];
+    let emotions = new Map();
+    let watch = new Map();
+    let dayRows = new Map();     // student_id -> checkin
+    let signingUp = false;
+    let detailFor = null;
+    let detailWeek = null;
+
+    // ── 날짜 도구 ────────────────────────────────────
+    // 로컬 시간대 기준으로 다룬다. toISOString 은 UTC 로 밀려 하루가 어긋난다.
+
+    const ymd = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const parse = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+    const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+
+    function mondayOf(d) {
+      const x = new Date(d);
+      const dow = x.getDay();            // 일요일 0
+      x.setDate(x.getDate() - (dow === 0 ? 6 : dow - 1));
+      return x;
+    }
+
+    const KOR_DOW = ['월', '화', '수', '목', '금'];
+    const fmtKo = (d) => `${d.getMonth() + 1}월 ${d.getDate()}일`;
+
+    // ── 공통 ────────────────────────────────────────
+
+    let toastTimer;
+    function toast(msg, tone) {
+      const el = $('toast');
+      el.textContent = msg;
+      el.dataset.tone = tone || 'ok';
+      el.dataset.show = '1';
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { el.dataset.show = '0'; }, 3400);
+    }
+
+    const show = (s) => { document.body.dataset.screen = s; };
+
+    // ── 인증 ────────────────────────────────────────
+
+    $('switch-mode').addEventListener('click', () => {
+      signingUp = !signingUp;
+      $('auth-title').textContent = signingUp ? '계정을 만들어요' : '담임 선생님, 안녕하세요';
+      $('auth-lead').textContent = signingUp
+        ? '학교 이메일과 비밀번호만 있으면 됩니다.'
+        : '학급 계정으로 로그인하세요.';
+      $('auth-go').textContent = signingUp ? '계정 만들기' : '로그인';
+      $('switch-text').textContent = signingUp ? '이미 계정이 있으신가요?' : '아직 계정이 없으신가요?';
+      $('switch-mode').textContent = signingUp ? '로그인' : '계정 만들기';
+      $('pw-hint').hidden = !signingUp;
+      $('password').autocomplete = signingUp ? 'new-password' : 'current-password';
+    });
+
+    $('auth-form').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const email = $('email').value.trim();
+      const password = $('password').value;
+      $('auth-go').disabled = true;
+
+      const { data, error } = signingUp
+        ? await db.auth.signUp({ email, password })
+        : await db.auth.signInWithPassword({ email, password });
+
+      $('auth-go').disabled = false;
+
+      if (error) { toast(error.message, 'bad'); return; }
+
+      // 이메일 확인이 켜져 있으면 세션 없이 돌아온다.
+      if (signingUp && !data.session) {
+        toast('확인 메일을 보냈습니다. 메일의 링크를 누른 뒤 로그인해주세요.');
+        return;
+      }
+      await afterLogin();
+    });
+
+    $('signout').addEventListener('click', async () => {
+      await db.auth.signOut();
+      cls = null; students = [];
+      show('auth');
+    });
+
+    // ── 학급 · 명단 ─────────────────────────────────
+
+    $('class-form').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const { data: { user } } = await db.auth.getUser();
+      const { data, error } = await db.from('classes').insert({
+        teacher_id: user.id,
+        grade: Number($('grade').value),
+        class_no: Number($('classno').value),
+        teacher_name: $('tname').value.trim(),
+      }).select().single();
+
+      if (error) { toast(error.message, 'bad'); return; }
+      cls = data;
+      $('setup-class').hidden = true;
+      $('setup-roster').hidden = false;
+    });
+
+    $('roster-form').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      // 「1  김하늘」처럼 번호가 붙어 있으면 떼어낸다.
+      const names = $('names').value
+        .split('\n')
+        .map((s) => s.replace(/^\s*\d+\s*[.\t)]?\s*/, '').trim())
+        .filter(Boolean);
+
+      if (!names.length) { toast('이름을 한 명 이상 넣어주세요.', 'bad'); return; }
+
+      const start = students.length;
+      const rows = names.map((name, i) => ({ class_id: cls.id, no: start + i + 1, name }));
+      const { error } = await db.from('students').insert(rows);
+      if (error) { toast(error.message, 'bad'); return; }
+
+      $('names').value = '';
+      toast(`${names.length}명을 등록했습니다.`);
+      await loadBoard();
+    });
+
+    $('add-students').addEventListener('click', () => {
+      $('setup-class').hidden = true;
+      $('setup-roster').hidden = false;
+      show('setup');
+    });
+
+    $('copy-code').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(cls.join_code);
+        toast('학급코드를 복사했습니다.');
+      } catch {
+        toast('복사가 안 됐어요. 코드를 직접 적어주세요.', 'bad');
+      }
+    });
+
+    // ── 자료 읽기 ───────────────────────────────────
+
+    async function loadEmotions() {
+      const { data, error } = await db.from('emotions')
+        .select('code, label, valence, color, is_watch').order('sort_order');
+      if (error) throw error;
+      emotions = new Map(data.map((e) => [e.code, e]));
+    }
+
+    async function loadClass() {
+      const { data, error } = await db.from('classes').select('*').limit(1).maybeSingle();
+      if (error) throw error;
+      cls = data;
+      return data;
+    }
+
+    async function loadStudents() {
+      const { data, error } = await db.from('students')
+        .select('id, no, name').eq('class_id', cls.id).order('no');
+      if (error) throw error;
+      students = data;
+    }
+
+    async function loadDay(date) {
+      dayRows = new Map();
+      if (!students.length) return;
+      const { data, error } = await db.from('checkins')
+        .select('id, student_id, emotion_code, note, checkin_date')
+        .eq('checkin_date', date)
+        .in('student_id', students.map((s) => s.id));
+      if (error) throw error;
+      for (const r of data) dayRows.set(r.student_id, r);
+    }
+
+    async function loadWatch() {
+      watch = new Map();
+      const { data, error } = await db.from('v_watchlist').select('*');
+      if (error) return;          // 뷰가 비어 있어도 대시보드는 계속 떠야 한다
+      for (const w of data) watch.set(w.student_id, w);
+    }
+
+    // ── 그리기 ──────────────────────────────────────
+
+    function draw() {
+      $('h-class').textContent =
+        cls.label ?? `${cls.grade}학년 ${cls.class_no}반 · ${cls.teacher_name}`;
+      $('h-code').textContent = cls.join_code;
+
+      const list = $('cards');
+      list.innerHTML = '';
+
+      if (!students.length) {
+        $('empty').textContent = '아직 등록된 학생이 없습니다. 「명단 관리」에서 이름을 넣어주세요.';
+        $('empty').hidden = false;
+        $('stats').innerHTML = '';
+        $('watch-banner').hidden = true;
+        return;
+      }
+      $('empty').hidden = true;
+
+      let good = 0, soso = 0, hard = 0, notes = 0;
+
+      for (const s of students) {
+        const row = dayRows.get(s.id);
+        const e = row ? emotions.get(row.emotion_code) : null;
+
+        if (e) {
+          if (e.valence >= 1) good++;
+          else if (e.valence === 0) soso++;
+          else hard++;
+        }
+        if (row?.note) notes++;
+
+        const li = document.createElement('li');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'card-s';
+        btn.dataset.state = row ? 'done' : 'none';
+        btn.dataset.hasNote = row?.note ? '1' : '0';
+        if (e) {
+          btn.style.setProperty('--em', e.color);
+          btn.style.setProperty('--em-soft', e.color + '22');
+          btn.style.setProperty('--em-deep', e.color);
+        }
+
+        if (watch.has(s.id)) {
+          const b = document.createElement('span');
+          b.className = 'badge';
+          b.textContent = '살펴보기';
+          const w = watch.get(s.id);
+          b.title = w.basis_dates
+            .map((d, i) => `${d} ${w.basis_labels[i]}`).join(' · ');
+          btn.append(b);
+        }
+
+        const top = document.createElement('div');
+        top.className = 'top';
+
+        const face = document.createElement('img');
+        face.className = 'face';
+        face.alt = '';
+        if (e) face.src = `../assets/characters/tile/${e.code}@256.webp`;
+        else face.style.visibility = 'hidden';
+
+        const who = document.createElement('div');
+        who.className = 'who';
+        const nm = document.createElement('div');
+        nm.className = 'nm';
+        nm.textContent = s.name;
+        const no = document.createElement('div');
+        no.className = 'no';
+        no.textContent = `${s.no}번`;
+        who.append(nm, no);
+        top.append(face, who);
+
+        btn.append(top);
+
+        if (e) {
+          const tag = document.createElement('span');
+          tag.className = 'emo';
+          tag.textContent = e.label;
+          btn.append(tag);
+        }
+
+        if (row?.note) {
+          const m = document.createElement('p');
+          m.className = 'memo';
+          m.textContent = row.note;
+          btn.append(m);
+        } else if (row) {
+          const m = document.createElement('p');
+          m.className = 'empty';
+          m.textContent = '한마디 없음';
+          btn.append(m);
+        } else {
+          const m = document.createElement('p');
+          m.className = 'empty';
+          m.textContent = '미제출';
+          btn.append(m);
+        }
+
+        btn.addEventListener('click', () => openDetail(s));
+        li.append(btn);
+        list.append(li);
+      }
+
+      const done = good + soso + hard;
+      $('stats').innerHTML = '';
+      const stats = [
+        ['제출', `${done} / ${students.length}`, ''],
+        ['한마디', `${notes}`, ''],
+        ['긍정', `${good}`, 'good'],
+        ['보통', `${soso}`, ''],
+        ['힘듦', `${hard}`, 'hard'],
+      ];
+      for (const [label, val, tone] of stats) {
+        const el = document.createElement('span');
+        el.className = 'stat';
+        if (tone) el.dataset.tone = tone;
+        el.textContent = label;
+        const b = document.createElement('b');
+        b.textContent = val;
+        el.append(b);
+        $('stats').append(el);
+      }
+
+      const flagged = students.filter((s) => watch.has(s.id));
+      $('watch-banner').hidden = !flagged.length;
+      $('watch-chips').innerHTML = '';
+      for (const s of flagged) {
+        const w = watch.get(s.id);
+        const c = document.createElement('span');
+        c.className = 'watch-chip';
+        c.textContent = `${s.name} — ${w.basis_labels.join(' · ')}`;
+        $('watch-chips').append(c);
+      }
+    }
+
+    // ── 학생 상세 · 주간 차트 ───────────────────────
+
+    async function openDetail(s) {
+      detailFor = s;
+      detailWeek = mondayOf(parse($('the-date').value));
+      $('d-name').textContent = `${s.no}번 ${s.name}`;
+      await drawWeek();
+      $('detail').showModal();
+    }
+
+    async function drawWeek() {
+      const mon = detailWeek;
+      const fri = addDays(mon, 4);
+      $('d-week').textContent = `${fmtKo(mon)} ~ ${fmtKo(fri)}`;
+      $('d-range').textContent = '월요일부터 금요일까지의 감정 흐름';
+
+      const { data, error } = await db.from('checkins')
+        .select('id, checkin_date, emotion_code, note')
+        .eq('student_id', detailFor.id)
+        .gte('checkin_date', ymd(mon))
+        .lte('checkin_date', ymd(fri))
+        .order('checkin_date');
+
+      if (error) { toast(error.message, 'bad'); return; }
+
+      const byDate = new Map(data.map((r) => [r.checkin_date, r]));
+      const days = [0, 1, 2, 3, 4].map((i) => {
+        const d = addDays(mon, i);
+        const row = byDate.get(ymd(d)) ?? null;
+        return { date: d, row, emo: row ? emotions.get(row.emotion_code) : null };
+      });
+
+      $('chart').innerHTML = chartSvg(days);
+
+      const memos = $('d-memos');
+      memos.innerHTML = '';
+      const withNote = days.filter((d) => d.row?.note);
+      if (!withNote.length) {
+        const li = document.createElement('li');
+        li.style.borderLeftColor = '#ddd';
+        li.innerHTML = '<p class="what" style="color:#9a92b8">이 주에 남긴 한마디가 없습니다.</p>';
+        memos.append(li);
+      }
+      for (const d of withNote) {
+        const li = document.createElement('li');
+        li.style.setProperty('--em', d.emo?.color ?? '#ccc');
+        const when = document.createElement('p');
+        when.className = 'when';
+        when.textContent = `${fmtKo(d.date)} · ${d.emo?.label ?? ''}`;
+        const what = document.createElement('p');
+        what.className = 'what';
+        what.textContent = d.row.note;
+        li.append(when, what);
+        memos.append(li);
+      }
+    }
+
+    // 가로 5칸(월~금), 세로 -2~+2. 점 색은 그날 고른 캐릭터 색을 그대로 쓴다.
+    function chartSvg(days) {
+      const W = 560, H = 250, L = 78, R = 22, T = 22, B = 46;
+      const pw = W - L - R, ph = H - T - B;
+      const x = (i) => L + (pw / 4) * i;
+      const y = (v) => T + ((2 - v) / 4) * ph;
+
+      const levels = [
+        [2, '아주 좋음'], [1, '좋음'], [0, '보통'], [-1, '힘듦'], [-2, '많이 힘듦'],
+      ];
+
+      let g = '';
+      for (const [v, label] of levels) {
+        g += `<line x1="${L}" y1="${y(v)}" x2="${W - R}" y2="${y(v)}" `
+           + `stroke="${v === 0 ? '#c9c2e0' : '#e6e2f0'}" stroke-width="1"/>`;
+        g += `<text x="${L - 10}" y="${y(v) + 4}" text-anchor="end" `
+           + `font-size="12" font-weight="700" fill="#8a82a8">${label}</text>`;
+      }
+
+      for (let i = 0; i < 5; i++) {
+        g += `<text x="${x(i)}" y="${H - 18}" text-anchor="middle" `
+           + `font-size="13" font-weight="800" fill="#5b5378">${KOR_DOW[i]}</text>`;
+        g += `<text x="${x(i)}" y="${H - 3}" text-anchor="middle" `
+           + `font-size="10" font-weight="600" fill="#a49cc0">${days[i].date.getDate()}일</text>`;
+      }
+
+      const pts = days.map((d, i) => (d.emo ? { i, v: d.emo.valence, e: d.emo } : null))
+                      .filter(Boolean);
+
+      if (pts.length > 1) {
+        const path = pts.map((p) => `${x(p.i)},${y(p.v)}`).join(' ');
+        g += `<polyline points="${path}" fill="none" stroke="#7c6ac4" `
+           + `stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+      }
+
+      for (const p of pts) {
+        // title 은 도형의 자식이어야 마우스를 올렸을 때 이름이 뜬다.
+        g += `<g><circle cx="${x(p.i)}" cy="${y(p.v)}" r="11" fill="#fff" `
+           + `stroke="${p.e.color}" stroke-width="4"/>`
+           + `<title>${p.e.label}</title></g>`;
+      }
+
+      if (!pts.length) {
+        g += `<text x="${W / 2}" y="${T + ph / 2}" text-anchor="middle" `
+           + `font-size="14" font-weight="700" fill="#a49cc0">이 주에는 기록이 없습니다</text>`;
+      }
+
+      return `<svg viewBox="0 0 ${W} ${H}" role="img" `
+           + `aria-label="월요일부터 금요일까지 감정 추이">${g}</svg>`;
+    }
+
+    $('d-prev').addEventListener('click', () => { detailWeek = addDays(detailWeek, -7); drawWeek(); });
+    $('d-next').addEventListener('click', () => { detailWeek = addDays(detailWeek, 7); drawWeek(); });
+    $('d-close').addEventListener('click', () => $('detail').close());
+
+    $('d-unlock').addEventListener('click', async () => {
+      const date = $('the-date').value;
+      const row = dayRows.get(detailFor.id);
+      if (!row) { toast('이 날짜에는 지울 기록이 없습니다.'); return; }
+      if (!confirm(`${detailFor.name} 학생의 ${date} 기록을 지울까요?\n학생이 다시 입력할 수 있게 됩니다.`)) return;
+
+      const { error } = await db.from('checkins').delete().eq('id', row.id);
+      if (error) { toast(error.message, 'bad'); return; }
+      toast('기록을 지웠습니다. 학생이 다시 쓸 수 있어요.');
+      $('detail').close();
+      await refresh();
+    });
+
+    // ── 내보내기 ────────────────────────────────────
+
+    $('export-btn').addEventListener('click', () => {
+      $('export-menu').hidden = !$('export-menu').hidden;
+    });
+
+    document.addEventListener('click', (ev) => {
+      if (!ev.target.closest('.export')) $('export-menu').hidden = true;
+    });
+
+    $('export-menu').addEventListener('click', async (ev) => {
+      const b = ev.target.closest('button[data-act]');
+      if (!b) return;
+      $('export-menu').hidden = true;
+      await doExport(b.dataset.act, b.dataset.range);
+    });
+
+    function rangeFor(kind) {
+      const d = parse($('the-date').value);
+      if (kind === 'day') return [ymd(d), ymd(d)];
+      if (kind === 'week') { const m = mondayOf(d); return [ymd(m), ymd(addDays(m, 6))]; }
+      if (kind === 'month') {
+        return [ymd(new Date(d.getFullYear(), d.getMonth(), 1)),
+                ymd(new Date(d.getFullYear(), d.getMonth() + 1, 0))];
+      }
+      return ['1900-01-01', '2999-12-31'];
+    }
+
+    async function doExport(act, kind) {
+      const [from, to] = rangeFor(kind);
+      const { data, error } = await db.from('checkins')
+        .select('checkin_date, emotion_code, note, students!inner(no, name, class_id)')
+        .eq('students.class_id', cls.id)
+        .gte('checkin_date', from)
+        .lte('checkin_date', to)
+        .order('checkin_date');
+
+      if (error) { toast(error.message, 'bad'); return; }
+      if (!data.length) { toast('그 기간에는 기록이 없습니다.'); return; }
+
+      const head = ['날짜', '번호', '이름', '감정', '점수', '한마디'];
+      const rows = data.map((r) => {
+        const e = emotions.get(r.emotion_code);
+        return [r.checkin_date, r.students.no, r.students.name,
+                e?.label ?? r.emotion_code, e?.valence ?? '', r.note ?? ''];
+      });
+
+      if (act === 'copy') {
+        // 시트에 붙여넣을 때 칸이 깨지지 않도록 탭·줄바꿈은 공백으로 바꾼다.
+        const clean = (v) => String(v).replace(/[\t\r\n]+/g, ' ');
+        const tsv = [head, ...rows].map((r) => r.map(clean).join('\t')).join('\n');
+        try {
+          await navigator.clipboard.writeText(tsv);
+          toast(`${rows.length}건을 복사했습니다. 구글시트에서 Ctrl+V 하세요.`);
+        } catch {
+          toast('복사 권한이 없습니다. CSV 저장을 써주세요.', 'bad');
+        }
+        return;
+      }
+
+      const q = (v) => `"${String(v).replace(/"/g, '""')}"`;
+      const csv = [head, ...rows].map((r) => r.map(q).join(',')).join('\r\n');
+      // BOM 을 붙여야 엑셀·시트에서 한글이 깨지지 않는다.
+      const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `EmotionInside_${from}_${to}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast(`${rows.length}건을 CSV 로 저장했습니다.`);
+    }
+
+    // ── 날짜 이동 ───────────────────────────────────
+
+    $('the-date').addEventListener('change', refresh);
+    $('prev-day').addEventListener('click', () => {
+      $('the-date').value = ymd(addDays(parse($('the-date').value), -1));
+      refresh();
+    });
+    $('next-day').addEventListener('click', () => {
+      $('the-date').value = ymd(addDays(parse($('the-date').value), 1));
+      refresh();
+    });
+    $('today').addEventListener('click', () => {
+      $('the-date').value = ymd(new Date());
+      refresh();
+    });
+
+    async function refresh() {
+      await loadDay($('the-date').value);
+      await loadWatch();
+      draw();
+    }
+
+    // ── 시작 ────────────────────────────────────────
+
+    async function loadBoard() {
+      await loadStudents();
+      await refresh();
+      show('board');
+    }
+
+    async function afterLogin() {
+      await loadClass();
+      if (!cls) {
+        $('setup-class').hidden = false;
+        $('setup-roster').hidden = true;
+        show('setup');
+        return;
+      }
+      await loadBoard();
+    }
+
+    async function boot() {
+      $('the-date').value = ymd(new Date());
+      try {
+        await loadEmotions();
+      } catch (err) {
+        toast('감정 목록을 불러오지 못했습니다.', 'bad');
+      }
+
+      const { data: { session } } = await db.auth.getSession();
+      if (!session) { show('auth'); return; }
+      await afterLogin();
+    }
+
+    boot();
+  </script>
+</body>
+</html>
