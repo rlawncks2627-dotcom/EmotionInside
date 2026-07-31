@@ -882,7 +882,7 @@
       const mon = detailWeek;
       const fri = addDays(mon, 4);
       $('d-week').textContent = `${fmtKo(mon)} ~ ${fmtKo(fri)}`;
-      $('d-range').textContent = '월요일부터 금요일까지의 감정 흐름';
+      $('d-range').textContent = '월요일부터 금요일까지, 학생이 고른 컨디션 흐름';
 
       const { data, error } = await db.from('checkins')
         .select('id, checkin_date, emotion_code, note, condition_score')
@@ -926,23 +926,25 @@
       }
     }
 
-    // 가로 5칸(월~금), 세로 -2~+2. 점 색은 그날 고른 캐릭터 색을 그대로 쓴다.
+    // 가로 5칸(월~금), 세로는 학생이 직접 고른 컨디션 1~5.
+    // 감정에서 점수를 추정하지 않는다 — 웃는 캐릭터를 골라도 컨디션이 낮은 날이 있다.
+    // 점 색은 그날 고른 캐릭터 색을 그대로 써서 감정도 함께 읽히게 한다.
     function chartSvg(days) {
       const W = 560, H = 250, L = 78, R = 22, T = 22, B = 46;
       const pw = W - L - R, ph = H - T - B;
       const x = (i) => L + (pw / 4) * i;
-      const y = (v) => T + ((2 - v) / 4) * ph;
+      const y = (s) => T + ((5 - s) / 4) * ph;
 
       const levels = [
-        [2, '아주 좋음'], [1, '좋음'], [0, '보통'], [-1, '힘듦'], [-2, '많이 힘듦'],
+        [5, '아주 좋음'], [4, '좋음'], [3, '보통'], [2, '힘듦'], [1, '많이 힘듦'],
       ];
 
       let g = '';
-      for (const [v, label] of levels) {
-        g += `<line x1="${L}" y1="${y(v)}" x2="${W - R}" y2="${y(v)}" `
-           + `stroke="${v === 0 ? '#c9c2e0' : '#e6e2f0'}" stroke-width="1"/>`;
-        g += `<text x="${L - 10}" y="${y(v) + 4}" text-anchor="end" `
-           + `font-size="12" font-weight="700" fill="#8a82a8">${label}</text>`;
+      for (const [s, label] of levels) {
+        g += `<line x1="${L}" y1="${y(s)}" x2="${W - R}" y2="${y(s)}" `
+           + `stroke="${s === 3 ? '#c9c2e0' : '#e6e2f0'}" stroke-width="1"/>`;
+        g += `<text x="${L - 10}" y="${y(s) + 4}" text-anchor="end" `
+           + `font-size="12" font-weight="700" fill="#8a82a8">${s} ${label}</text>`;
       }
 
       for (let i = 0; i < 5; i++) {
@@ -952,29 +954,43 @@
            + `font-size="10" font-weight="600" fill="#a49cc0">${days[i].date.getDate()}일</text>`;
       }
 
-      const pts = days.map((d, i) => (d.emo ? { i, v: d.emo.valence, e: d.emo } : null))
-                      .filter(Boolean);
+      const pts = days
+        .map((d, i) => {
+          const s = d.row?.condition_score;
+          return s == null ? null : { i, s, e: d.emo };
+        })
+        .filter(Boolean);
 
       if (pts.length > 1) {
-        const path = pts.map((p) => `${x(p.i)},${y(p.v)}`).join(' ');
+        const path = pts.map((p) => `${x(p.i)},${y(p.s)}`).join(' ');
         g += `<polyline points="${path}" fill="none" stroke="#7c6ac4" `
            + `stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
       }
 
       for (const p of pts) {
+        const label = `컨디션 ${p.s}${p.e ? ` · ${p.e.label}` : ''}`;
         // title 은 도형의 자식이어야 마우스를 올렸을 때 이름이 뜬다.
-        g += `<g><circle cx="${x(p.i)}" cy="${y(p.v)}" r="11" fill="#fff" `
-           + `stroke="${p.e.color}" stroke-width="4"/>`
-           + `<title>${p.e.label}</title></g>`;
+        g += `<g><circle cx="${x(p.i)}" cy="${y(p.s)}" r="11" fill="#fff" `
+           + `stroke="${p.e?.color ?? '#7c6ac4'}" stroke-width="4"/>`
+           + `<title>${label}</title></g>`;
+      }
+
+      // 컨디션 기능이 생기기 전 기록은 점수가 없다. 빈칸으로 두고 아래에 알린다.
+      const noScore = days.filter((d) => d.row && d.row.condition_score == null).length;
+      if (noScore) {
+        g += `<text x="${W - R}" y="${T - 6}" text-anchor="end" `
+           + `font-size="11" font-weight="700" fill="#a49cc0">`
+           + `컨디션을 고르기 전 기록 ${noScore}일은 빠져 있습니다</text>`;
       }
 
       if (!pts.length) {
         g += `<text x="${W / 2}" y="${T + ph / 2}" text-anchor="middle" `
-           + `font-size="14" font-weight="700" fill="#a49cc0">이 주에는 기록이 없습니다</text>`;
+           + `font-size="14" font-weight="700" fill="#a49cc0">`
+           + `${noScore ? '이 주에는 컨디션 점수가 없습니다' : '이 주에는 기록이 없습니다'}</text>`;
       }
 
       return `<svg viewBox="0 0 ${W} ${H}" role="img" `
-           + `aria-label="월요일부터 금요일까지 감정 추이">${g}</svg>`;
+           + `aria-label="월요일부터 금요일까지 컨디션 추이">${g}</svg>`;
     }
 
     $('d-prev').addEventListener('click', () => { detailWeek = addDays(detailWeek, -7); drawWeek(); });
