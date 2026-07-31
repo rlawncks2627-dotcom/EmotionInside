@@ -1,9 +1,12 @@
 import { useState, type FormEvent } from 'react';
 
 import { fetchRoster } from '../lib/api';
-import { asset } from '../lib/assets';
+import { characterTile } from '../lib/assets';
 import type { Notify } from '../components/Toast';
 import type { RosterEntry } from '../types';
+
+/** 첫 화면에 뜨는 캐릭터. 9종을 다 늘어놓으면 정신없어서 다섯만 고른다. */
+const FLOATERS = ['joy', 'sadness', 'anger', 'anxiety', 'envy'] as const;
 
 /** 학교약칭(2) + 학년(1) + 반(2). 예: 2학년 1반 = YS201 */
 const CODE_LENGTH = 5;
@@ -43,14 +46,19 @@ export function CodeScreen({ onFound, notify }: Props) {
 
   return (
     <div className="hello">
-      <img
-        className="hero"
-        src={asset('assets/bg/hero-cast.webp')}
-        alt=""
-        aria-hidden="true"
-        width={600}
-        height={506}
-      />
+      <div className="hero" aria-hidden="true">
+        {FLOATERS.map((code, i) => (
+          <img
+            key={code}
+            className="floater"
+            src={characterTile(code, 256)}
+            alt=""
+            width={256}
+            height={256}
+            style={{ ['--i' as string]: i }}
+          />
+        ))}
+      </div>
 
       <h1 className="hello-title">
         감정<span>Inside</span>

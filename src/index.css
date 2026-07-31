@@ -1,5 +1,32 @@
 /* 공통 토큰과 기본 컴포넌트. 교사 대시보드를 이식할 때도 그대로 쓴다. */
 
+/* Pretendard 를 직접 담아둔다.
+   CDN 을 쓰면 교내망에서 막혔을 때 글꼴이 통째로 바뀌어 화면이 달라 보인다.
+   한글 서브셋 3종만 담는다(400·700·800). 600 은 브라우저가 700 으로 맞춘다. */
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/assets/fonts/Pretendard-Regular.subset.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/assets/fonts/Pretendard-Bold.subset.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('/assets/fonts/Pretendard-ExtraBold.subset.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* 인사이드아웃 본부의 보랏빛을 기준색으로 삼는다 */
   --deep: #1b1233;
