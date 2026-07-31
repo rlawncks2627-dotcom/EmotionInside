@@ -18,25 +18,28 @@
       <div class="auth-card">
         <p class="brand">EmotionInside</p>
         <h1 id="auth-title">담임 선생님, 안녕하세요</h1>
-        <p class="lead" id="auth-lead">학급 계정으로 로그인하세요.</p>
+        <p class="lead" id="auth-lead">아이디와 비밀번호로 로그인하세요.</p>
 
         <form id="auth-form">
           <div class="field">
-            <label for="email">이메일</label>
-            <input id="email" type="email" autocomplete="username" required>
+            <label for="login-id">아이디</label>
+            <input id="login-id" type="text" autocomplete="username"
+                   inputmode="text" autocapitalize="none" spellcheck="false"
+                   pattern="[A-Za-z0-9_]{3,20}" maxlength="20" required
+                   placeholder="예) kim2024">
+            <p class="hint">영문 소문자·숫자·밑줄 3~20자</p>
           </div>
           <div class="field">
             <label for="password">비밀번호</label>
             <input id="password" type="password" autocomplete="current-password"
-                   minlength="6" required>
-            <p class="hint" id="pw-hint" hidden>6자 이상으로 정해주세요.</p>
+                   minlength="8" required>
+            <p class="hint">영문자와 특수문자를 포함해 8자 이상</p>
           </div>
           <button class="btn btn-primary" type="submit" style="width:100%" id="auth-go">로그인</button>
         </form>
 
         <p class="switch-line">
-          <span id="switch-text">아직 계정이 없으신가요?</span>
-          <button type="button" id="switch-mode">계정 만들기</button>
+          계정이 필요하면 관리 선생님께 아이디 발급을 요청하세요.
         </p>
       </div>
     </div>
@@ -100,6 +103,7 @@
       </div>
       <div class="right">
         <button class="btn btn-quiet" type="button" id="add-students">명단 관리</button>
+        <button class="btn btn-quiet" type="button" id="change-pw">비밀번호 변경</button>
         <button class="btn btn-quiet" type="button" id="signout">로그아웃</button>
       </div>
     </header>
@@ -177,7 +181,6 @@
     let emotions = new Map();
     let watch = new Map();
     let dayRows = new Map();     // student_id -> checkin
-    let signingUp = false;
     let detailFor = null;
     let detailWeek = null;
 
@@ -214,39 +217,60 @@
 
     // ── 인증 ────────────────────────────────────────
 
-    $('switch-mode').addEventListener('click', () => {
-      signingUp = !signingUp;
-      $('auth-title').textContent = signingUp ? '계정을 만들어요' : '담임 선생님, 안녕하세요';
-      $('auth-lead').textContent = signingUp
-        ? '학교 이메일과 비밀번호만 있으면 됩니다.'
-        : '학급 계정으로 로그인하세요.';
-      $('auth-go').textContent = signingUp ? '계정 만들기' : '로그인';
-      $('switch-text').textContent = signingUp ? '이미 계정이 있으신가요?' : '아직 계정이 없으신가요?';
-      $('switch-mode').textContent = signingUp ? '로그인' : '계정 만들기';
-      $('pw-hint').hidden = !signingUp;
-      $('password').autocomplete = signingUp ? 'new-password' : 'current-password';
-    });
+    // Supabase Auth 는 내부적으로 이메일을 쓴다. 선생님은 아이디만 입력하고,
+    // 여기서 고정 도메인을 붙여 넘긴다. 실제로 메일이 오가지는 않는다.
+    const ID_DOMAIN = 'emotioninside.local';
+    const toEmail = (loginId) => `${loginId.trim().toLowerCase()}@${ID_DOMAIN}`;
+
+    /** 영문자와 특수문자를 포함한 8자 이상. */
+    function passwordProblem(pw) {
+      if (pw.length < 8) return '비밀번호는 8자 이상이어야 합니다.';
+      if (!/[A-Za-z]/.test(pw)) return '비밀번호에 영문자가 들어가야 합니다.';
+      if (!/[^A-Za-z0-9]/.test(pw)) return '비밀번호에 특수문자가 하나 이상 들어가야 합니다.';
+      return null;
+    }
 
     $('auth-form').addEventListener('submit', async (ev) => {
       ev.preventDefault();
-      const email = $('email').value.trim();
+      const loginId = $('login-id').value.trim().toLowerCase();
       const password = $('password').value;
+
+      if (!/^[a-z0-9_]{3,20}$/.test(loginId)) {
+        toast('아이디는 영문 소문자·숫자·밑줄 3~20자입니다.', 'bad');
+        return;
+      }
+
       $('auth-go').disabled = true;
-
-      const { data, error } = signingUp
-        ? await db.auth.signUp({ email, password })
-        : await db.auth.signInWithPassword({ email, password });
-
+      const { error } = await db.auth.signInWithPassword({
+        email: toEmail(loginId),
+        password,
+      });
       $('auth-go').disabled = false;
 
-      if (error) { toast(error.message, 'bad'); return; }
-
-      // 이메일 확인이 켜져 있으면 세션 없이 돌아온다.
-      if (signingUp && !data.session) {
-        toast('확인 메일을 보냈습니다. 메일의 링크를 누른 뒤 로그인해주세요.');
+      if (error) {
+        // 내부 이메일 형식이 그대로 노출되면 선생님만 헷갈린다.
+        const msg = /invalid login credentials/i.test(error.message)
+          ? '아이디나 비밀번호가 맞지 않습니다.'
+          : error.message;
+        toast(msg, 'bad');
         return;
       }
       await afterLogin();
+    });
+
+    // ── 비밀번호 바꾸기 ─────────────────────────────
+    // 처음 받은 임시 비밀번호를 선생님이 직접 바꿀 수 있어야 한다.
+
+    $('change-pw').addEventListener('click', async () => {
+      const pw = prompt('새 비밀번호를 입력하세요.\n영문자와 특수문자를 포함해 8자 이상입니다.');
+      if (pw === null) return;
+
+      const problem = passwordProblem(pw);
+      if (problem) { toast(problem, 'bad'); return; }
+
+      const { error } = await db.auth.updateUser({ password: pw });
+      if (error) { toast(error.message, 'bad'); return; }
+      toast('비밀번호를 바꿨습니다.');
     });
 
     $('signout').addEventListener('click', async () => {
