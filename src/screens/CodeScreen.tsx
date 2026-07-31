@@ -4,6 +4,9 @@ import { fetchRoster } from '../lib/api';
 import type { Notify } from '../components/Toast';
 import type { RosterEntry } from '../types';
 
+/** 학교약칭(2) + 학년(1) + 반(2). 예: 2학년 1반 = YS201 */
+const CODE_LENGTH = 5;
+
 interface Props {
   onFound: (code: string, rows: RosterEntry[]) => void;
   notify: Notify;
@@ -17,8 +20,8 @@ export function CodeScreen({ onFound, notify }: Props) {
   async function handleSubmit(ev: FormEvent) {
     ev.preventDefault();
     const clean = code.trim().toUpperCase();
-    if (clean.length < 4) {
-      notify('코드를 다시 확인해줘.', 'bad');
+    if (clean.length !== CODE_LENGTH) {
+      notify(`코드는 ${CODE_LENGTH}글자야. 다시 확인해줄래?`, 'bad');
       return;
     }
 
@@ -40,7 +43,7 @@ export function CodeScreen({ onFound, notify }: Props) {
   return (
     <div className="card">
       <h2>우리 반 코드를 넣어줘</h2>
-      <p>선생님이 알려주신 6글자를 입력하면 돼.</p>
+      <p>선생님이 알려주신 {CODE_LENGTH}글자를 입력하면 돼.</p>
       <form onSubmit={handleSubmit}>
         <input
           className="code-input"
@@ -51,8 +54,8 @@ export function CodeScreen({ onFound, notify }: Props) {
           autoComplete="off"
           autoCapitalize="characters"
           spellCheck={false}
-          maxLength={6}
-          placeholder="ABC123"
+          maxLength={CODE_LENGTH}
+          placeholder="YS201"
           aria-label="학급 코드"
         />
         <button className="btn btn-primary" type="submit" style={{ width: '100%' }} disabled={busy}>

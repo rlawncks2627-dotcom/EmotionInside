@@ -19,11 +19,11 @@
     <section class="screen" data-screen="code">
       <div class="card">
         <h2>우리 반 코드를 넣어줘</h2>
-        <p>선생님이 알려주신 6글자를 입력하면 돼.</p>
+        <p>선생님이 알려주신 5글자를 입력하면 돼.</p>
         <form id="code-form">
           <input class="code-input" id="code-input" type="text" inputmode="latin"
                  autocomplete="off" autocapitalize="characters" spellcheck="false"
-                 maxlength="6" placeholder="ABC123" aria-label="학급 코드">
+                 maxlength="5" placeholder="YS201" aria-label="학급 코드">
           <button class="btn btn-primary" type="submit" style="width:100%">확인</button>
         </form>
       </div>
@@ -322,7 +322,7 @@
     $('code-form').addEventListener('submit', async (ev) => {
       ev.preventDefault();
       const code = $('code-input').value.trim().toUpperCase();
-      if (code.length < 4) { toast('코드를 다시 확인해줘.', 'bad'); return; }
+      if (code.length !== 5) { toast('코드는 5글자야. 다시 확인해줄래?', 'bad'); return; }
 
       try {
         const rows = await loadRoster(code);
