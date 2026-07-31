@@ -7,9 +7,10 @@ body {
 }
 
 .screen { display: none; }
-body[data-screen="auth"]  .screen[data-screen="auth"],
-body[data-screen="setup"] .screen[data-screen="setup"],
-body[data-screen="board"] .screen[data-screen="board"] { display: block; }
+body[data-screen="auth"]   .screen[data-screen="auth"],
+body[data-screen="signup"] .screen[data-screen="signup"],
+body[data-screen="setup"]  .screen[data-screen="setup"],
+body[data-screen="board"]  .screen[data-screen="board"] { display: block; }
 
 body[data-screen="loading"] .screen { display: none; }
 body:not([data-screen="loading"]) .boot { display: none; }
@@ -202,6 +203,83 @@ body:not([data-screen="loading"]) .boot { display: none; }
   font-size: 14px;
   font-weight: 800;
   color: #8a5510;
+}
+
+/* ── 가입 신청 (관리자에게만 보임) ─────────────────── */
+
+.signup-banner {
+  margin: 0 clamp(16px, 3vw, 32px) 18px;
+  background: #eef3ff;
+  border: 1px solid #b9caf0;
+  border-left: 5px solid #3b62c4;
+  border-radius: var(--r-md);
+  padding: 14px 18px;
+}
+
+.signup-banner h3 {
+  font-size: 15px;
+  color: #24417f;
+  margin-bottom: 10px;
+}
+
+.signup-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.signup-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: #fff;
+  border: 1px solid #d3ddf3;
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.signup-list .who {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.signup-list .who b {
+  font-weight: 800;
+}
+
+.signup-list .meta {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin-left: 8px;
+}
+
+.signup-list .acts {
+  display: flex;
+  gap: 8px;
+}
+
+.signup-list .acts button {
+  min-height: 38px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.signup-list .ok {
+  background: #2f6b46;
+  color: #fff;
+}
+
+.signup-list .no {
+  background: #f1eef8;
+  color: #6b6288;
 }
 
 /* ── 학생 카드 ─────────────────────────────────────── */
