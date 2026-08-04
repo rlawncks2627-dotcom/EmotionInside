@@ -322,6 +322,9 @@
 
 .floater {
   width: clamp(58px, 12.5vw, 104px);
+  /* img 의 height 속성이 남아 있으면 aspect-ratio 가 무시되어 세로로 길어진다.
+     height 를 auto 로 되돌려야 정사각형이 된다. */
+  height: auto;
   aspect-ratio: 1;
   border-radius: 24px;
   object-fit: cover;
