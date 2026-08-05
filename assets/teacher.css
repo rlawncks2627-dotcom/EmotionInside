@@ -768,6 +768,10 @@ dialog.detail::backdrop { background: rgba(20, 12, 40, 0.55); }
   .detail .d-head { padding: 16px 18px; }
   .detail .d-body { flex: 1; max-height: none; padding: 16px 18px; }
   .detail .d-foot { padding: 12px 18px max(12px, env(safe-area-inset-bottom)); border-radius: 0; }
+
+  /* 좁은 화면에서는 위아래로. column-reverse 라서 PDF 가 위, 지우기가 아래에 온다 —
+     자주 쓰는 쪽이 엄지에 가깝고, 되돌릴 수 없는 쪽이 멀어진다. */
+  .detail .d-foot { flex-direction: column-reverse; }
   .detail .d-foot .btn { width: 100%; font-size: 15px; padding: 0 14px; }
 
   .chart-box { padding: 10px; }
