@@ -225,6 +225,8 @@
           <p class="group">CSV 파일로 저장</p>
           <button type="button" data-act="csv" data-range="month">이번 달</button>
           <button type="button" data-act="csv" data-range="all">전체 기간</button>
+          <p class="group">PDF 리포트 — 학생마다 한 장</p>
+          <button type="button" data-act="pdf" data-range="week">이번 주 (반 전체)</button>
         </div>
       </div>
     </div>
@@ -266,6 +268,7 @@
     </div>
     <div class="d-foot">
       <button class="btn btn-quiet" type="button" id="d-unlock">이 날짜 기록 지우기 (다시 쓰게 하기)</button>
+      <button class="btn btn-primary" type="button" id="d-report">PDF 리포트</button>
     </div>
   </dialog>
 
@@ -274,6 +277,9 @@
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
     import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '../assets/config.js';
+    import {
+      KOR_DOW, LEVELS, buildWeek, chartGeometry, downloadWeekReport, scoredPoints,
+    } from '../assets/report.js';
 
     const db = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
     const $ = (id) => document.getElementById(id);
@@ -301,7 +307,6 @@
       return x;
     }
 
-    const KOR_DOW = ['월', '화', '수', '목', '금', '토', '일'];
     const fmtKo = (d) => `${d.getMonth() + 1}월 ${d.getDate()}일`;
 
     // ── 공통 ────────────────────────────────────────
@@ -900,19 +905,9 @@
 
       if (error) { toast(error.message, 'bad'); return; }
 
-      const byDate = new Map(data.map((r) => [r.checkin_date, r]));
       // 월~일 이레를 모두 만든다. 주말은 수업일이 아니지만 기록이 남는 일이 있고,
       // 월~금만 그리면 그 기록이 아무 말 없이 사라진다.
-      const days = [0, 1, 2, 3, 4, 5, 6].map((i) => {
-        const d = addDays(mon, i);
-        const row = byDate.get(ymd(d)) ?? null;
-        return {
-          date: d,
-          row,
-          emo: row ? emotions.get(row.emotion_code) : null,
-          weekend: i >= 5,
-        };
-      });
+      const days = buildWeek(mon, data, emotions);
 
       detailDays = days;
       paintChart();
@@ -948,34 +943,26 @@
     // narrow 는 휴대폰용 배치다. viewBox 를 좁게 잡아야 화면에 맞춰 줄어들 때
     // 글자가 같이 줄어들지 않는다. 넓은 도면을 그대로 축소하면 눈금 글씨가 6px 이 된다.
     function chartSvg(days, narrow) {
-      const W = narrow ? 340 : 640;
-      const H = narrow ? 232 : 250;
-      const L = narrow ? 26 : 86;
-      const R = narrow ? 12 : 20;
-      const T = 24;
-      const B = narrow ? 40 : 46;
-      const pw = W - L - R, ph = H - T - B;
-      const last = days.length - 1;
-      const x = (i) => L + (pw / last) * i;
-      const y = (s) => T + ((5 - s) / 4) * ph;
+      // 좌표 계산은 report.js 와 함께 쓴다. 화면과 PDF 가 다른 그림을 그리면 안 된다.
+      const geo = chartGeometry({
+        width: narrow ? 340 : 640,
+        height: narrow ? 232 : 250,
+        pad: narrow ? { l: 26, r: 12, t: 24, b: 40 } : { l: 86, r: 20, t: 24, b: 46 },
+        count: days.length,
+      });
+      const { W, H, L, R, T, pw, ph, x, y } = geo;
       const dotR = narrow ? 8 : 11;
-
-      const levels = [
-        [5, '아주 좋음'], [4, '좋음'], [3, '보통'], [2, '힘듦'], [1, '많이 힘듦'],
-      ];
 
       let g = '';
 
       // 주말 칸을 옅게 깔아 수업일과 구분한다. 기록은 그리되 한눈에 구분되게.
-      const half = pw / last / 2;
       for (let i = 0; i < days.length; i++) {
         if (!days[i].weekend) continue;
-        const x0 = Math.max(x(i) - half, L - 6);
-        const x1 = Math.min(x(i) + half, W - R + 6);
-        g += `<rect x="${x0}" y="${T - 6}" width="${x1 - x0}" height="${ph + 12}" fill="#f2effa"/>`;
+        const b = geo.band(i);
+        g += `<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" fill="#f2effa"/>`;
       }
 
-      for (const [s, label] of levels) {
+      for (const [s, label] of LEVELS) {
         g += `<line x1="${L}" y1="${y(s)}" x2="${W - R}" y2="${y(s)}" `
            + `stroke="${s === 3 ? '#c9c2e0' : '#e6e2f0'}" stroke-width="1"/>`;
         // 좁은 화면에서는 숫자만. 뜻은 차트 아래 설명줄이 대신한다.
@@ -993,12 +980,7 @@
            + `${days[i].date.getDate()}</text>`;
       }
 
-      const pts = days
-        .map((d, i) => {
-          const s = d.row?.condition_score;
-          return s == null ? null : { i, s, e: d.emo };
-        })
-        .filter(Boolean);
+      const pts = scoredPoints(days);
 
       // 이어지는 날은 실선, 중간이 비면 점선. 안 낸 날을 그은 선으로 채우지 않는다.
       for (let k = 1; k < pts.length; k++) {
@@ -1049,6 +1031,79 @@
     $('d-next').addEventListener('click', () => { detailWeek = addDays(detailWeek, 7); drawWeek(); });
     $('d-close').addEventListener('click', () => $('detail').close());
 
+    // ── PDF 리포트 ──────────────────────────────────
+
+    /** 쪽머리에 쓸 학급 이름. 담임 이름은 빼고 「2학년 1반」까지만. */
+    const classLabel = () => cls.label ?? `${cls.grade}학년 ${cls.class_no}반`;
+
+    /** 리포트를 만드는 동안 버튼을 잠근다. 두 번 누르면 파일이 두 개 떨어진다. */
+    async function whileMaking(btn, work) {
+      const was = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '만드는 중…';
+      try {
+        await work();
+      } catch (err) {
+        console.error(err);
+        toast('리포트를 만들지 못했습니다. 다시 눌러주세요.', 'bad');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = was;
+      }
+    }
+
+    $('d-report').addEventListener('click', () => {
+      if (!detailFor || !detailDays) return;
+      void whileMaking($('d-report'), async () => {
+        const pages = await downloadWeekReport({
+          fileName: `EmotionInside_${detailFor.name}_${ymd(detailWeek)}.pdf`,
+          classLabel: classLabel(),
+          weekLabel: $('d-week').textContent,
+          entries: [{ student: detailFor, days: detailDays }],
+        });
+        toast(`${detailFor.name} 학생 리포트 ${pages}쪽을 저장했습니다.`);
+      });
+    });
+
+    async function classReport() {
+      if (!students.length) { toast('명단이 비어 있습니다.', 'bad'); return; }
+
+      const mon = mondayOf(parse($('the-date').value));
+      const sun = addDays(mon, 6);
+
+      // 25명을 한 명씩 조회하지 않는다. 그 주 전체를 한 번에 받아 학생별로 나눈다.
+      const { data, error } = await db.from('checkins')
+        .select('student_id, checkin_date, emotion_code, note, condition_score')
+        .in('student_id', students.map((s) => s.id))
+        .gte('checkin_date', ymd(mon))
+        .lte('checkin_date', ymd(sun))
+        .order('checkin_date');
+
+      if (error) { toast(error.message, 'bad'); return; }
+
+      const byStudent = new Map();
+      for (const r of data) {
+        if (!byStudent.has(r.student_id)) byStudent.set(r.student_id, []);
+        byStudent.get(r.student_id).push(r);
+      }
+
+      // 기록이 없는 학생도 빼지 않는다. 명단 순서 그대로여야 파일철에 넣기 좋고,
+      // 조용히 빠지면 담임이 누가 안 냈는지 알아채기 어렵다.
+      const entries = students.map((s) => ({
+        student: s,
+        days: buildWeek(mon, byStudent.get(s.id) ?? [], emotions),
+      }));
+
+      const pages = await downloadWeekReport({
+        fileName: `EmotionInside_${classLabel()}_${ymd(mon)}.pdf`,
+        classLabel: classLabel(),
+        weekLabel: `${fmtKo(mon)} ~ ${fmtKo(sun)}`,
+        entries,
+      });
+
+      toast(`${students.length}명 · ${pages}쪽을 저장했습니다.`);
+    }
+
     $('d-unlock').addEventListener('click', async () => {
       const date = $('the-date').value;
       const row = dayRows.get(detailFor.id);
@@ -1076,6 +1131,11 @@
       const b = ev.target.closest('button[data-act]');
       if (!b) return;
       $('export-menu').hidden = true;
+
+      if (b.dataset.act === 'pdf') {
+        await whileMaking($('export-btn'), classReport);
+        return;
+      }
       await doExport(b.dataset.act, b.dataset.range);
     });
 
