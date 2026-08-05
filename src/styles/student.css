@@ -34,10 +34,16 @@
   );
 }
 
+/* 여백은 노치·홈바를 피해서 잡는다. viewport-fit=cover 가 있어야 env() 가 값을 갖는다. */
 .wrap {
+  --pad: clamp(16px, 3vw, 32px);
   width: min(1000px, 100%);
   margin: 0 auto;
-  padding: clamp(16px, 3vw, 32px);
+  padding:
+    max(var(--pad), env(safe-area-inset-top))
+    max(var(--pad), env(safe-area-inset-right))
+    max(var(--pad), env(safe-area-inset-bottom))
+    max(var(--pad), env(safe-area-inset-left));
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -108,8 +114,10 @@
   position: relative;
   display: block;
   width: 100%;
-  /* 최소 120px 보장 — 저학년 손가락으로도 빗나가지 않는 크기 */
-  min-width: 120px;
+  /* min-width 를 두면 좁은 휴대폰에서 3칸이 화면 밖으로 밀려 잘린다.
+     칸을 줄어들게 두고, 대신 아래 좁은 화면 규칙에서 여백을 좁혀
+     타일이 90px 아래로는 내려가지 않게 한다. */
+  min-width: 0;
   aspect-ratio: 1;
   border-radius: var(--r-md);
   overflow: hidden;
@@ -495,8 +503,14 @@
   line-height: 1.6;
 }
 
-/* 가로가 넉넉하면 감정과 메모를 나란히 둔다 */
-@media (min-width: 900px) and (orientation: landscape) {
+/* ── 화면 크기별 손질 ──────────────────────────────── */
+
+/* 감정 고르기 화면은 스크롤 없이 한 화면에 들어와야 한다.
+   줄 서서 쓰는 태블릿에서 「다 골랐어」 버튼이 화면 밖에 있으면 아이가 멈춰 선다.
+   그래서 가로만 보지 않고 세로 여유까지 함께 보고 배치를 고른다. */
+
+/* ① 넓은 화면, 또는 가로로 든 기기 — 감정과 메모를 나란히. */
+@media (min-width: 900px), (min-width: 700px) and (max-height: 700px) {
   .emotion-layout {
     display: grid;
     grid-template-columns: 1.35fr 1fr;
@@ -506,5 +520,159 @@
 
   .emotions {
     margin-bottom: 0;
+  }
+}
+
+/* ② 세로로 세운 태블릿(768×1024 등) — 위아래로 두되 타일이 지나치게 커지지 않게
+   격자 폭을 묶어 아래 메모칸까지 한 화면에 들어오게 한다. */
+@media (min-width: 600px) and (max-width: 899px) and (min-height: 701px) {
+  .emotions,
+  .note-box {
+    width: min(100%, 520px);
+    margin-inline: auto;
+  }
+
+  .emotions {
+    margin-bottom: 14px;
+  }
+
+  /* 아래 메모칸까지 한 화면에 담기 위해 위쪽 여백을 조금씩 덜어낸다 */
+  .title {
+    font-size: 34px;
+  }
+
+  .subtitle {
+    margin-bottom: 12px;
+  }
+
+  .score-select {
+    min-height: 50px;
+    margin-bottom: 12px;
+  }
+
+  .note-box textarea {
+    min-height: 68px;
+  }
+}
+
+/* 휴대폰 세로. 3×3 을 유지하되 여백을 좁혀 타일 자체를 최대한 키운다.
+   (360px 화면에서 타일 한 변이 약 100px — 저학년 손가락에도 넉넉하다) */
+@media (max-width: 480px) {
+  .wrap {
+    --pad: 12px;
+  }
+
+  .emotions {
+    gap: 8px;
+  }
+
+  .emotion {
+    border-radius: 14px;
+  }
+
+  .emotion .name {
+    padding: 18px 4px 6px;
+    font-size: 14px;
+  }
+
+  .topbar {
+    font-size: 14px;
+  }
+
+  .topbar .btn-ghost {
+    padding: 0 12px;
+  }
+
+  /* 이름 칸은 두 줄로. 한 줄에 하나씩 두면 25명이 너무 길어진다. */
+  .roster {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .student {
+    min-height: 72px;
+    font-size: 18px;
+  }
+
+  .card {
+    padding: 22px 18px;
+  }
+
+  .code-input {
+    font-size: 26px;
+    letter-spacing: 0.2em;
+  }
+
+  .done .said {
+    font-size: 15px;
+  }
+}
+
+/* 휴대폰 가로. 높이가 모자라 첫 화면의 캐릭터·제목이 코드 입력칸을 밀어낸다.
+   캐릭터 줄을 접고 글자를 줄여 한 화면에 들어오게 한다. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .hello {
+    padding: 4px 0 12px;
+  }
+
+  /* 캐릭터는 지우지 않고 줄인다. 첫인상이 이 줄에서 만들어진다. */
+  .hero {
+    margin-bottom: 6px;
+  }
+
+  .floater,
+  .floater:nth-child(3) {
+    width: clamp(40px, 11vh, 62px);
+    border-radius: 16px;
+  }
+
+  .hello-title {
+    font-size: clamp(28px, 6vh, 40px);
+  }
+
+  .hello-sub {
+    margin-bottom: 14px;
+    font-size: 15px;
+  }
+
+  .card {
+    padding: 18px 22px;
+  }
+
+  .card h2 {
+    font-size: 19px;
+  }
+
+  .card p {
+    margin-bottom: 14px;
+    font-size: 13px;
+  }
+
+  .code-input {
+    padding: 10px;
+    margin-bottom: 12px;
+    font-size: 24px;
+  }
+
+  .done {
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .done .pick-img {
+    width: clamp(110px, 26vh, 160px);
+    border-radius: 22px;
+  }
+
+  .done h2 {
+    font-size: clamp(22px, 5vh, 30px);
+  }
+
+  .title {
+    font-size: clamp(24px, 5vh, 34px);
+  }
+
+  .subtitle {
+    margin-bottom: 10px;
   }
 }

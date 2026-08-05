@@ -2,7 +2,8 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- viewport-fit=cover 로 둬야 노치가 있는 기기에서 env(safe-area-inset-*) 이 값을 갖는다. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2a1c4d">
   <title>EmotionInside — 담임 대시보드</title>
   <link rel="stylesheet" href="../assets/app.css">
@@ -161,7 +162,8 @@
 
           <table class="roster-table">
             <thead>
-              <tr><th style="width:72px">번호</th><th>이름</th><th style="width:120px">기록</th><th style="width:64px"></th></tr>
+              <!-- 칸 너비는 teacher.css 에서 잡는다. 인라인으로 두면 좁은 화면에서 못 줄인다. -->
+              <tr><th class="c-no">번호</th><th>이름</th><th class="c-marks">기록</th><th class="c-del"></th></tr>
             </thead>
             <tbody id="roster-rows"></tbody>
           </table>
@@ -258,6 +260,8 @@
         <button type="button" id="d-next">다음주 ›</button>
       </div>
       <div class="chart-box" id="chart"></div>
+      <!-- 좁은 화면에서는 세로 눈금이 숫자만 남는다. 뜻은 여기서 읽는다. -->
+      <p class="chart-legend">1 많이 힘듦 · 2 힘듦 · 3 보통 · 4 좋음 · 5 아주 좋음</p>
       <ul class="memo-list" id="d-memos"></ul>
     </div>
     <div class="d-foot">
@@ -281,6 +285,7 @@
     let dayRows = new Map();     // student_id -> checkin
     let detailFor = null;
     let detailWeek = null;
+    let detailDays = null;    // 차트를 다시 그릴 때 쓰는 그 주의 이레치
 
     // ── 날짜 도구 ────────────────────────────────────
     // 로컬 시간대 기준으로 다룬다. toISOString 은 UTC 로 밀려 하루가 어긋난다.
@@ -296,7 +301,7 @@
       return x;
     }
 
-    const KOR_DOW = ['월', '화', '수', '목', '금'];
+    const KOR_DOW = ['월', '화', '수', '목', '금', '토', '일'];
     const fmtKo = (d) => `${d.getMonth() + 1}월 ${d.getDate()}일`;
 
     // ── 공통 ────────────────────────────────────────
@@ -882,27 +887,35 @@
 
     async function drawWeek() {
       const mon = detailWeek;
-      const fri = addDays(mon, 4);
-      $('d-week').textContent = `${fmtKo(mon)} ~ ${fmtKo(fri)}`;
-      $('d-range').textContent = '월요일부터 금요일까지, 학생이 고른 컨디션 흐름';
+      const sun = addDays(mon, 6);
+      $('d-week').textContent = `${fmtKo(mon)} ~ ${fmtKo(sun)}`;
+      $('d-range').textContent = '한 주 동안 학생이 고른 컨디션 흐름';
 
       const { data, error } = await db.from('checkins')
         .select('id, checkin_date, emotion_code, note, condition_score')
         .eq('student_id', detailFor.id)
         .gte('checkin_date', ymd(mon))
-        .lte('checkin_date', ymd(fri))
+        .lte('checkin_date', ymd(sun))
         .order('checkin_date');
 
       if (error) { toast(error.message, 'bad'); return; }
 
       const byDate = new Map(data.map((r) => [r.checkin_date, r]));
-      const days = [0, 1, 2, 3, 4].map((i) => {
+      // 월~일 이레를 모두 만든다. 주말은 수업일이 아니지만 기록이 남는 일이 있고,
+      // 월~금만 그리면 그 기록이 아무 말 없이 사라진다.
+      const days = [0, 1, 2, 3, 4, 5, 6].map((i) => {
         const d = addDays(mon, i);
         const row = byDate.get(ymd(d)) ?? null;
-        return { date: d, row, emo: row ? emotions.get(row.emotion_code) : null };
+        return {
+          date: d,
+          row,
+          emo: row ? emotions.get(row.emotion_code) : null,
+          weekend: i >= 5,
+        };
       });
 
-      $('chart').innerHTML = chartSvg(days);
+      detailDays = days;
+      paintChart();
 
       const memos = $('d-memos');
       memos.innerHTML = '';
@@ -928,32 +941,56 @@
       }
     }
 
-    // 가로 5칸(월~금), 세로는 학생이 직접 고른 컨디션 1~5.
+    // 가로 7칸(월~일), 세로는 학생이 직접 고른 컨디션 1~5.
     // 감정에서 점수를 추정하지 않는다 — 웃는 캐릭터를 골라도 컨디션이 낮은 날이 있다.
     // 점 색은 그날 고른 캐릭터 색을 그대로 써서 감정도 함께 읽히게 한다.
-    function chartSvg(days) {
-      const W = 560, H = 250, L = 78, R = 22, T = 22, B = 46;
+    //
+    // narrow 는 휴대폰용 배치다. viewBox 를 좁게 잡아야 화면에 맞춰 줄어들 때
+    // 글자가 같이 줄어들지 않는다. 넓은 도면을 그대로 축소하면 눈금 글씨가 6px 이 된다.
+    function chartSvg(days, narrow) {
+      const W = narrow ? 340 : 640;
+      const H = narrow ? 232 : 250;
+      const L = narrow ? 26 : 86;
+      const R = narrow ? 12 : 20;
+      const T = 24;
+      const B = narrow ? 40 : 46;
       const pw = W - L - R, ph = H - T - B;
-      const x = (i) => L + (pw / 4) * i;
+      const last = days.length - 1;
+      const x = (i) => L + (pw / last) * i;
       const y = (s) => T + ((5 - s) / 4) * ph;
+      const dotR = narrow ? 8 : 11;
 
       const levels = [
         [5, '아주 좋음'], [4, '좋음'], [3, '보통'], [2, '힘듦'], [1, '많이 힘듦'],
       ];
 
       let g = '';
+
+      // 주말 칸을 옅게 깔아 수업일과 구분한다. 기록은 그리되 한눈에 구분되게.
+      const half = pw / last / 2;
+      for (let i = 0; i < days.length; i++) {
+        if (!days[i].weekend) continue;
+        const x0 = Math.max(x(i) - half, L - 6);
+        const x1 = Math.min(x(i) + half, W - R + 6);
+        g += `<rect x="${x0}" y="${T - 6}" width="${x1 - x0}" height="${ph + 12}" fill="#f2effa"/>`;
+      }
+
       for (const [s, label] of levels) {
         g += `<line x1="${L}" y1="${y(s)}" x2="${W - R}" y2="${y(s)}" `
            + `stroke="${s === 3 ? '#c9c2e0' : '#e6e2f0'}" stroke-width="1"/>`;
-        g += `<text x="${L - 10}" y="${y(s) + 4}" text-anchor="end" `
-           + `font-size="12" font-weight="700" fill="#8a82a8">${s} ${label}</text>`;
+        // 좁은 화면에서는 숫자만. 뜻은 차트 아래 설명줄이 대신한다.
+        g += `<text x="${L - (narrow ? 7 : 10)}" y="${y(s) + 4}" text-anchor="end" `
+           + `font-size="12" font-weight="${narrow ? 800 : 700}" fill="#8a82a8">`
+           + `${narrow ? s : `${s} ${label}`}</text>`;
       }
 
-      for (let i = 0; i < 5; i++) {
-        g += `<text x="${x(i)}" y="${H - 18}" text-anchor="middle" `
-           + `font-size="13" font-weight="800" fill="#5b5378">${KOR_DOW[i]}</text>`;
+      for (let i = 0; i < days.length; i++) {
+        const tone = days[i].weekend ? '#a49cc0' : '#5b5378';
+        g += `<text x="${x(i)}" y="${H - (narrow ? 16 : 18)}" text-anchor="middle" `
+           + `font-size="${narrow ? 12 : 13}" font-weight="800" fill="${tone}">${KOR_DOW[i]}</text>`;
         g += `<text x="${x(i)}" y="${H - 3}" text-anchor="middle" `
-           + `font-size="10" font-weight="600" fill="#a49cc0">${days[i].date.getDate()}일</text>`;
+           + `font-size="${narrow ? 9 : 10}" font-weight="600" fill="#a49cc0">`
+           + `${days[i].date.getDate()}</text>`;
       }
 
       const pts = days
@@ -963,37 +1000,50 @@
         })
         .filter(Boolean);
 
-      if (pts.length > 1) {
-        const path = pts.map((p) => `${x(p.i)},${y(p.s)}`).join(' ');
-        g += `<polyline points="${path}" fill="none" stroke="#7c6ac4" `
-           + `stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+      // 이어지는 날은 실선, 중간이 비면 점선. 안 낸 날을 그은 선으로 채우지 않는다.
+      for (let k = 1; k < pts.length; k++) {
+        const a = pts[k - 1], b = pts[k];
+        const gap = b.i - a.i > 1;
+        g += `<line x1="${x(a.i)}" y1="${y(a.s)}" x2="${x(b.i)}" y2="${y(b.s)}" `
+           + `stroke="#7c6ac4" stroke-width="${narrow ? 2.5 : 3}" stroke-linecap="round"`
+           + `${gap ? ' stroke-dasharray="5 5" opacity="0.55"' : ''}/>`;
       }
 
       for (const p of pts) {
         const label = `컨디션 ${p.s}${p.e ? ` · ${p.e.label}` : ''}`;
         // title 은 도형의 자식이어야 마우스를 올렸을 때 이름이 뜬다.
-        g += `<g><circle cx="${x(p.i)}" cy="${y(p.s)}" r="11" fill="#fff" `
-           + `stroke="${p.e?.color ?? '#7c6ac4'}" stroke-width="4"/>`
+        g += `<g><circle cx="${x(p.i)}" cy="${y(p.s)}" r="${dotR}" fill="#fff" `
+           + `stroke="${p.e?.color ?? '#7c6ac4'}" stroke-width="${narrow ? 3 : 4}"/>`
            + `<title>${label}</title></g>`;
       }
 
       // 컨디션 기능이 생기기 전 기록은 점수가 없다. 빈칸으로 두고 아래에 알린다.
       const noScore = days.filter((d) => d.row && d.row.condition_score == null).length;
       if (noScore) {
-        g += `<text x="${W - R}" y="${T - 6}" text-anchor="end" `
-           + `font-size="11" font-weight="700" fill="#a49cc0">`
-           + `컨디션을 고르기 전 기록 ${noScore}일은 빠져 있습니다</text>`;
+        g += `<text x="${W - R}" y="${T - 8}" text-anchor="end" `
+           + `font-size="${narrow ? 10 : 11}" font-weight="700" fill="#a49cc0">`
+           + `컨디션 없는 기록 ${noScore}일 제외</text>`;
       }
 
       if (!pts.length) {
-        g += `<text x="${W / 2}" y="${T + ph / 2}" text-anchor="middle" `
-           + `font-size="14" font-weight="700" fill="#a49cc0">`
+        g += `<text x="${L + pw / 2}" y="${T + ph / 2}" text-anchor="middle" `
+           + `font-size="${narrow ? 13 : 14}" font-weight="700" fill="#a49cc0">`
            + `${noScore ? '이 주에는 컨디션 점수가 없습니다' : '이 주에는 기록이 없습니다'}</text>`;
       }
 
       return `<svg viewBox="0 0 ${W} ${H}" role="img" `
-           + `aria-label="월요일부터 금요일까지 컨디션 추이">${g}</svg>`;
+           + `aria-label="월요일부터 일요일까지 컨디션 추이">${g}</svg>`;
     }
+
+    // 폭에 따라 도면을 갈아끼운다. 창을 돌리거나 크기를 바꿔도 다시 그린다.
+    const narrowChart = window.matchMedia('(max-width: 560px)');
+
+    function paintChart() {
+      if (!detailDays) return;
+      $('chart').innerHTML = chartSvg(detailDays, narrowChart.matches);
+    }
+
+    narrowChart.addEventListener('change', paintChart);
 
     $('d-prev').addEventListener('click', () => { detailWeek = addDays(detailWeek, -7); drawWeek(); });
     $('d-next').addEventListener('click', () => { detailWeek = addDays(detailWeek, 7); drawWeek(); });
