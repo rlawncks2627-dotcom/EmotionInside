@@ -4,6 +4,12 @@
 body {
   background: #f4f2f9;
   min-height: 100dvh;
+
+  /* 좌우 여백을 한 곳에서 잡는다. 노치가 있는 기기에서는 그만큼 더 밀어준다.
+     (viewport-fit=cover 가 있어야 env() 이 값을 갖는다. 없으면 0 이라 그대로다.) */
+  --gutter: clamp(16px, 3vw, 32px);
+  --gutter-l: max(var(--gutter), env(safe-area-inset-left));
+  --gutter-r: max(var(--gutter), env(safe-area-inset-right));
 }
 
 .screen { display: none; }
@@ -100,7 +106,7 @@ body:not([data-screen="loading"]) .boot { display: none; }
 .head {
   background: #fff;
   border-bottom: 1px solid var(--line);
-  padding: 14px clamp(16px, 3vw, 32px);
+  padding: 14px var(--gutter-r) 14px var(--gutter-l);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -135,7 +141,7 @@ body:not([data-screen="loading"]) .boot { display: none; }
 /* ── 도구 막대 ─────────────────────────────────────── */
 
 .toolbar {
-  padding: 16px clamp(16px, 3vw, 32px);
+  padding: 16px var(--gutter-r) 16px var(--gutter-l);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -185,7 +191,7 @@ body:not([data-screen="loading"]) .boot { display: none; }
 /* ── 관심학생 배너 ─────────────────────────────────── */
 
 .watch-banner {
-  margin: 0 clamp(16px, 3vw, 32px) 18px;
+  margin: 0 var(--gutter-r) 18px var(--gutter-l);
   background: #fff4e5;
   border: 1px solid #f0d3a4;
   border-left: 5px solid #e08a23;
@@ -272,7 +278,7 @@ body:not([data-screen="loading"]) .boot { display: none; }
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 16px 26px;
+  padding: 16px 26px max(16px, env(safe-area-inset-bottom));
   border-top: 1px solid var(--line);
   background: #faf9fd;
   border-radius: 0 0 var(--r-lg) var(--r-lg);
@@ -290,6 +296,11 @@ body:not([data-screen="loading"]) .boot { display: none; }
   color: #9a92b8;
   padding: 0 10px 8px;
 }
+
+/* 칸 너비. 좁은 화면에서 줄일 수 있도록 HTML 인라인이 아니라 여기서 잡는다. */
+.roster-table .c-no { width: 72px; }
+.roster-table .c-marks { width: 120px; }
+.roster-table .c-del { width: 64px; }
 
 .roster-table td {
   padding: 3px 4px;
@@ -360,7 +371,7 @@ body:not([data-screen="loading"]) .boot { display: none; }
 /* ── 가입 신청 (관리자에게만 보임) ─────────────────── */
 
 .signup-banner {
-  margin: 0 clamp(16px, 3vw, 32px) 18px;
+  margin: 0 var(--gutter-r) 18px var(--gutter-l);
   background: #eef3ff;
   border: 1px solid #b9caf0;
   border-left: 5px solid #3b62c4;
@@ -440,7 +451,7 @@ body:not([data-screen="loading"]) .boot { display: none; }
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   gap: 14px;
-  padding: 0 clamp(16px, 3vw, 32px) 60px;
+  padding: 0 var(--gutter-r) max(60px, env(safe-area-inset-bottom)) var(--gutter-l);
   list-style: none;
   margin: 0;
 }
@@ -592,7 +603,17 @@ dialog.detail::backdrop { background: rgba(20, 12, 40, 0.55); }
   overflow-x: auto;
 }
 
-.chart-box svg { display: block; width: 100%; min-width: 460px; height: auto; }
+/* 도면이 화면 폭에 맞춰 줄어든다. 좁은 화면에서는 스크립트가 좁은 배치를 그리므로
+   억지로 최소 너비를 잡아 가로 스크롤을 만들 필요가 없다. */
+.chart-box svg { display: block; width: 100%; height: auto; }
+
+.chart-legend {
+  margin: 8px 2px 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-align: center;
+}
 
 .memo-list { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 10px; }
 
@@ -610,7 +631,7 @@ dialog.detail::backdrop { background: rgba(20, 12, 40, 0.55); }
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  padding: 16px 24px;
+  padding: 16px 24px max(16px, env(safe-area-inset-bottom));
   border-top: 1px solid var(--line);
   background: #faf9fd;
   border-radius: 0 0 var(--r-lg) var(--r-lg);
@@ -655,3 +676,132 @@ dialog.detail::backdrop { background: rgba(20, 12, 40, 0.55); }
   font-size: 16px;
   font-weight: 700;
 }
+
+/* ── 태블릿 · 휴대폰 ───────────────────────────────────
+   담임 선생님이 교실에서 태블릿이나 휴대폰으로 여는 경우를 위한 손질.
+   PC 배치를 그대로 줄이면 머리말과 도구막대가 화면의 절반을 먹는다. */
+
+/* 폭이 어중간하면 도구막대가 두 줄로 접힌다. 그때도 내보내기는 오른쪽에 붙어 있어야
+   메뉴가 버튼 아래로 곧게 열린다. */
+@media (min-width: 821px) {
+  .toolbar .export { margin-left: auto; }
+}
+
+@media (max-width: 820px) {
+  body { --gutter: 16px; }
+
+  /* 세로 공간이 아까우니 머리말은 붙박이로 두지 않는다. */
+  .head {
+    position: static;
+    padding-top: 12px;
+    padding-bottom: 12px;
+    gap: 10px;
+  }
+
+  .head h1 { font-size: 17px; }
+  .head .left { gap: 10px; }
+
+  .head .right .btn,
+  .roster-tools .btn {
+    min-height: 40px;
+    padding: 0 14px;
+    font-size: 14px;
+  }
+
+  /* 날짜 · 통계 · 내보내기를 한 줄에 밀어 넣지 않고 층으로 쌓는다. */
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .datenav input[type="date"] { flex: 1; min-width: 0; }
+
+  .export .btn { width: 100%; }
+
+  .menu {
+    left: 0;
+    right: 0;
+    min-width: 0;
+  }
+
+  .watch-banner,
+  .signup-banner { margin-bottom: 14px; }
+
+  .cards { gap: 12px; }
+
+  .auth-card { padding: 26px 22px; }
+  .center-wrap { padding: 16px; }
+
+  /* 명단 편집은 화면을 가득 쓴다. 25명을 훑으려면 세로가 전부 필요하다. */
+  .sheet-wrap { padding: 0; }
+
+  .sheet {
+    width: 100%;
+    max-height: none;
+    min-height: 100dvh;
+    border-radius: 0;
+  }
+
+  .sheet-head { padding: 18px 18px 14px; }
+  .sheet-head h1 { font-size: 20px; }
+  .sheet-body { padding: 14px 18px 18px; }
+  .sheet-foot { padding: 12px 18px max(12px, env(safe-area-inset-bottom)); border-radius: 0; }
+  .sheet-foot .btn { flex: 1; padding: 0 12px; }
+
+  /* 상세 창도 전체 화면으로. 좁은 화면에서 가운데 뜬 작은 창은 만지기 나쁘다. */
+  dialog.detail {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    margin: 0;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  dialog.detail:not([open]) { display: none; }
+
+  .detail .d-head { padding: 16px 18px; }
+  .detail .d-body { flex: 1; max-height: none; padding: 16px 18px; }
+  .detail .d-foot { padding: 12px 18px max(12px, env(safe-area-inset-bottom)); border-radius: 0; }
+  .detail .d-foot .btn { width: 100%; font-size: 15px; padding: 0 14px; }
+
+  .chart-box { padding: 10px; }
+}
+
+@media (max-width: 520px) {
+  /* 머리말은 위아래로 나눈다. 학급코드가 잘리면 안 된다. */
+  .head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .head .right { flex-wrap: wrap; }
+  .head .right .btn { flex: 1; }
+
+  /* 명단 표의 곁칸을 좁혀 이름 칸을 지킨다. */
+  .roster-table .c-no { width: 40px; }
+  .roster-table .c-marks { width: 56px; }
+  .roster-table .c-del { width: 42px; }
+  .roster-table th { padding: 0 4px 8px; }
+  .roster-table td { padding: 3px 2px; }
+  .roster-table .rn { font-size: 14px; }
+  .roster-table input { padding: 10px; font-size: 16px; }
+  .roster-table .marks { padding-left: 4px; font-size: 12px; }
+  .row-del { width: 34px; height: 34px; }
+
+  /* 아주 좁은 기기(320px)에서는 날짜 줄이 한 줄에 안 들어간다.
+     접히게 두지 않으면 도구막대가 통째로 화면 밖으로 밀린다. */
+  .datenav { flex-wrap: wrap; }
+  .datenav input[type="date"] { flex: 1 1 130px; }
+  .datenav .btn { padding: 0 14px; }
+
+  .stat { padding: 7px 11px; font-size: 13px; }
+
+  .week-nav button { padding: 8px 10px; font-size: 13px; }
+}
+

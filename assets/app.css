@@ -80,6 +80,9 @@ button {
   border: none;
   background: none;
   cursor: pointer;
+
+  /* 두 번 톡톡 치면 확대되는 동작을 끈다. 그래야 연달아 눌러도 300ms 를 기다리지 않는다. */
+  touch-action: manipulation;
 }
 
 /* 키보드 사용자를 위한 초점 표시. 마우스·터치에는 나타나지 않는다. */
@@ -132,7 +135,8 @@ button {
 .toast {
   position: fixed;
   left: 50%;
-  bottom: 32px;
+  /* 홈바가 있는 기기에서는 그 위로 띄운다 */
+  bottom: calc(32px + env(safe-area-inset-bottom));
   transform: translateX(-50%) translateY(140%);
   max-width: min(560px, calc(100vw - 32px));
   padding: 14px 22px;
