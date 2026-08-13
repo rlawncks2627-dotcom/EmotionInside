@@ -4,6 +4,7 @@ import { Toast, useToast } from './components/Toast';
 import { CodeScreen } from './screens/CodeScreen';
 import { DoneScreen } from './screens/DoneScreen';
 import { EmotionScreen } from './screens/EmotionScreen';
+import { LetterScreen } from './screens/LetterScreen';
 import { RosterScreen } from './screens/RosterScreen';
 import { fetchEmotions, fetchRoster } from './lib/api';
 import { asset } from './lib/assets';
@@ -17,6 +18,8 @@ type Screen =
   | { kind: 'code' }
   | { kind: 'roster'; rows: RosterEntry[] }
   | { kind: 'emotion'; me: SavedStudent }
+  // checkedIn — 오늘 기록을 이미 마친 학생이 이름을 눌러 들어온 경우
+  | { kind: 'letter'; me: SavedStudent; checkedIn: boolean }
   | { kind: 'done'; result: DoneResult };
 
 const toSaved = (r: RosterEntry): SavedStudent => ({
@@ -108,8 +111,11 @@ export default function App() {
   }, [notify]);
 
   function handleRosterPick(entry: RosterEntry) {
+    // 오늘 기록을 마친 학생도 편지는 보낼 수 있어야 한다. 기록은 하루 한 번이지만
+    // 하고 싶은 말이 생기는 건 하루 한 번이 아니다.
     if (entry.submitted) {
       notify(`${entry.student_name}, 오늘은 이미 기록했어!`);
+      setScreen({ kind: 'letter', me: toSaved(entry), checkedIn: true });
       return;
     }
     setScreen({ kind: 'emotion', me: toSaved(entry) });
@@ -161,7 +167,23 @@ export default function App() {
               emotions={emotions}
               notify={notify}
               onNotMe={() => void backToRoster()}
+              onLetter={() => setScreen({ kind: 'letter', me: screen.me, checkedIn: false })}
               onDone={(result) => setScreen({ kind: 'done', result })}
+            />
+          )}
+
+          {screen.kind === 'letter' && (
+            <LetterScreen
+              me={screen.me}
+              code={code}
+              checkedIn={screen.checkedIn}
+              notify={notify}
+              onBack={() =>
+                screen.checkedIn
+                  ? void backToRoster()
+                  : setScreen({ kind: 'emotion', me: screen.me })
+              }
+              onDone={() => void backToRoster()}
             />
           )}
 

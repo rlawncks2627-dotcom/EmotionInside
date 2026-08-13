@@ -35,7 +35,8 @@ body {
 body[data-screen="code"]    .screen[data-screen="code"],
 body[data-screen="student"] .screen[data-screen="student"],
 body[data-screen="emotion"] .screen[data-screen="emotion"],
-body[data-screen="done"]    .screen[data-screen="done"] { display: block; }
+body[data-screen="done"]    .screen[data-screen="done"],
+body[data-screen="letter"]  .screen[data-screen="letter"] { display: block; }
 
 .wrap {
   width: min(1000px, 100%);
@@ -52,6 +53,8 @@ body[data-screen="done"]    .screen[data-screen="done"] { display: block; }
   display: flex;
   align-items: center;
   justify-content: space-between;
+  /* 감정 화면에는 「비밀편지」까지 들어가서 좁은 기기에서는 한 줄에 다 못 담는다. */
+  flex-wrap: wrap;
   gap: 12px;
   color: rgba(255, 255, 255, 0.82);
   font-size: 15px;
@@ -177,6 +180,9 @@ body[data-screen="done"]    .screen[data-screen="done"] { display: block; }
   color: var(--ink);
   background: #fff;
   resize: none;
+  /* body 의 no-select 를 여기서만 푼다. 안 그러면 쓴 글을 고치기가 나쁘다. */
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .note-box textarea::placeholder { color: #a49ebb; }
@@ -192,6 +198,60 @@ body[data-screen="done"]    .screen[data-screen="done"] { display: block; }
 
 .counter { font-size: 14px; font-weight: 600; color: var(--ink-soft); }
 .counter[data-over="1"] { color: #b3261e; }
+
+/* ── 선생님께 비밀편지 ─────────────────────────────── */
+
+.btn-letter {
+  background: rgba(255, 255, 255, 0.2);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* 편지는 한마디보다 길게 쓴다. 감정 타일이 없는 화면이라 세로 여유가 있다. */
+.letter-box { width: min(620px, 100%); margin: 0 auto; }
+.letter-box .letter-text { min-height: clamp(140px, 26vh, 240px); }
+
+/* 익명 선택. 저학년도 뜻을 알 수 있게 한 줄 설명을 붙인다. */
+.anon-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border: 2px solid var(--line);
+  border-radius: var(--r-md);
+  cursor: pointer;
+}
+
+.anon-check:has(input:checked) {
+  border-color: var(--joy);
+  background: rgba(242, 183, 5, 0.1);
+}
+
+.anon-check input {
+  width: 26px;
+  height: 26px;
+  margin: 0;
+  flex: none;
+  accent-color: var(--joy);
+  cursor: pointer;
+}
+
+.anon-text {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.35;
+}
+
+.anon-text small {
+  display: block;
+  margin-top: 3px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
 
 /* ── 이름 고르기 ───────────────────────────────────── */
 

@@ -37,6 +37,28 @@ export async function fetchRoster(code: string): Promise<RosterEntry[]> {
   return (data ?? []) as RosterEntry[];
 }
 
+/**
+ * 선생님께 보내는 비밀편지.
+ *
+ * 익명으로 보내면 DB 에 보낸 사람을 아예 저장하지 않는다. 화면에서만 가리는 게
+ * 아니라 기록 자체가 남지 않아야, 나중에도 누가 썼는지 되짚을 수 없다.
+ */
+export async function sendLetter(args: {
+  code: string;
+  studentId: string;
+  body: string;
+  anonymous: boolean;
+}): Promise<void> {
+  const { error } = await supabase.rpc('send_letter', {
+    p_code: args.code,
+    p_student: args.studentId,
+    p_body: args.body.trim(),
+    p_anonymous: args.anonymous,
+  });
+
+  if (error) throw new ApiError(error.message, error.code);
+}
+
 export async function submitCheckin(args: {
   code: string;
   studentId: string;

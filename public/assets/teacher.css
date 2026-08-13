@@ -553,6 +553,91 @@ body:not([data-screen="loading"]) .boot { display: none; }
   box-shadow: 0 2px 6px rgba(180, 110, 20, 0.35);
 }
 
+/* ── 편지함 ────────────────────────────────────────── */
+
+/* 안 읽은 편지 수. 버튼 글자 옆에 작게만 붙인다 — 세어보라는 뜻이 아니라
+   "왔다" 는 신호이기 때문이다. */
+.inbox-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #d64545;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.inbox-count[hidden] { display: none; }
+
+.inbox-note {
+  margin: 0 0 14px;
+  padding: 10px 13px;
+  border-radius: 12px;
+  background: #f2effa;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.inbox-note b { color: #6b5cb0; }
+
+.letter-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+
+.letter-list li {
+  border-left: 4px solid var(--line);
+  background: #faf9fd;
+  border-radius: 0 12px 12px 0;
+  padding: 12px 14px;
+}
+
+/* 아직 안 읽은 편지는 눈에 띄게. 창을 닫으면 읽음으로 바뀐다. */
+.letter-list li[data-unread="1"] {
+  border-left-color: #e08a23;
+  background: #fff8ec;
+}
+
+.letter-list .when {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+
+.letter-list .from { font-size: 14px; color: var(--ink); }
+
+/* 익명 편지는 보낸 사람 자리를 다른 색으로 둬서, 이름이 빠진 게 아니라
+   학생이 그렇게 보내기로 한 것임이 한눈에 보이게 한다. */
+.letter-list li[data-anon="1"] .from { color: #6b5cb0; }
+
+.letter-list .new {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e08a23;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.letter-list .what {
+  margin: 6px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.65;
+  /* 아이가 줄바꿈으로 나눠 쓴 글을 한 덩어리로 뭉치지 않는다. */
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 /* ── 학생 상세 ─────────────────────────────────────── */
 
 dialog.detail {

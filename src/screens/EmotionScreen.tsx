@@ -14,10 +14,11 @@ interface Props {
   emotions: Emotion[];
   onDone: (result: DoneResult) => void;
   onNotMe: () => void;
+  onLetter: () => void;
   notify: Notify;
 }
 
-export function EmotionScreen({ me, code, emotions, onDone, onNotMe, notify }: Props) {
+export function EmotionScreen({ me, code, emotions, onDone, onNotMe, onLetter, notify }: Props) {
   const [picked, setPicked] = useState<Emotion | null>(null);
   const [score, setScore] = useState<number | null>(null);
   const [note, setNote] = useState('');
@@ -53,7 +54,12 @@ export function EmotionScreen({ me, code, emotions, onDone, onNotMe, notify }: P
   return (
     <>
       <div className="topbar">
-        <span className="who">{me.label}</span>
+        <span className="who">
+          {me.label}
+          <button className="btn btn-ghost btn-letter" type="button" onClick={onLetter}>
+            선생님께 비밀편지
+          </button>
+        </span>
         <span className="who">
           <strong>{me.name}</strong>
           <button className="btn btn-ghost" type="button" onClick={onNotMe}>
