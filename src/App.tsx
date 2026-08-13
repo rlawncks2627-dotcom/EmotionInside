@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { Toast, useToast } from './components/Toast';
+import { AlreadyScreen } from './screens/AlreadyScreen';
 import { CodeScreen } from './screens/CodeScreen';
 import { DoneScreen } from './screens/DoneScreen';
 import { EmotionScreen } from './screens/EmotionScreen';
@@ -18,8 +19,10 @@ type Screen =
   | { kind: 'code' }
   | { kind: 'roster'; rows: RosterEntry[] }
   | { kind: 'emotion'; me: SavedStudent }
+  // 오늘 기록을 이미 마친 학생이 이름을 눌렀을 때. 여기서 편지로 갈 수 있다.
+  | { kind: 'already'; me: SavedStudent }
   // checkedIn — 오늘 기록을 이미 마친 학생인지. from — 「돌아가기」로 어디로 갈지
-  | { kind: 'letter'; me: SavedStudent; checkedIn: boolean; from: 'roster' | 'emotion' }
+  | { kind: 'letter'; me: SavedStudent; checkedIn: boolean; from: 'roster' | 'emotion' | 'already' }
   | { kind: 'done'; result: DoneResult };
 
 const toSaved = (r: RosterEntry): SavedStudent => ({
@@ -111,10 +114,10 @@ export default function App() {
   }, [notify]);
 
   function handleRosterPick(entry: RosterEntry) {
+    // 이미 기록한 학생을 알림 하나로 돌려세우면 편지를 보내고 싶은 아이가 그 자리에서
+    // 막힌다. 편지로 가는 길이 있는 화면으로 보낸다.
     if (entry.submitted) {
-      // 편지는 명단 화면의 「선생님께 비밀편지」로 따로 들어간다. 여기서 편지 화면으로
-      // 끌고 가면 기록하러 온 아이가 영문 모를 화면을 만난다.
-      notify(`${entry.student_name}, 오늘은 이미 기록했어! 편지는 보낼 수 있어.`);
+      setScreen({ kind: 'already', me: toSaved(entry) });
       return;
     }
     setScreen({ kind: 'emotion', me: toSaved(entry) });
@@ -181,17 +184,27 @@ export default function App() {
             />
           )}
 
+          {screen.kind === 'already' && (
+            <AlreadyScreen
+              me={screen.me}
+              onLetter={() =>
+                setScreen({ kind: 'letter', me: screen.me, checkedIn: true, from: 'already' })
+              }
+              onBack={() => void backToRoster()}
+            />
+          )}
+
           {screen.kind === 'letter' && (
             <LetterScreen
               me={screen.me}
               code={code}
               checkedIn={screen.checkedIn}
               notify={notify}
-              onBack={() =>
-                screen.from === 'emotion'
-                  ? setScreen({ kind: 'emotion', me: screen.me })
-                  : void backToRoster()
-              }
+              onBack={() => {
+                if (screen.from === 'emotion') setScreen({ kind: 'emotion', me: screen.me });
+                else if (screen.from === 'already') setScreen({ kind: 'already', me: screen.me });
+                else void backToRoster();
+              }}
               onDone={() => void backToRoster()}
             />
           )}
