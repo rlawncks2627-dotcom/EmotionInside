@@ -264,59 +264,12 @@
   white-space: nowrap;
 }
 
-/* 명단 화면의 입구. 이름 칸과 헷갈리지 않게 점선으로 두르고 가로로 길게 둔다.
-   눌러서 켜면 노랗게 바뀌어, 지금 고르는 이름이 「기록할 사람」이 아니라
-   「편지 쓸 사람」이라는 게 보인다. */
-.letter-entry {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  min-height: 66px;
-  padding: 12px 18px;
-  margin-bottom: clamp(10px, 2vh, 16px);
-  border-radius: var(--r-md);
-  border: 2px dashed rgba(255, 255, 255, 0.42);
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff;
-  text-align: left;
-  transition: background 0.12s ease, color 0.12s ease;
-}
-
-.letter-entry[aria-pressed='true'] {
-  border-style: solid;
-  border-color: transparent;
+/* 명단 화면에서는 눌러서 켜는 버튼이다. 켜지면 노랗게 바꿔서, 지금 고르는 이름이
+   「기록할 사람」이 아니라 「편지 쓸 사람」이라는 것을 버튼 하나로 알 수 있게 한다. */
+.btn-letter[aria-pressed='true'] {
   background: linear-gradient(180deg, #ffd764, var(--joy));
   color: #4a3400;
   box-shadow: var(--shadow-sm);
-}
-
-.letter-entry:active {
-  transform: translateY(1px) scale(0.995);
-}
-
-.letter-entry .mark {
-  font-size: 26px;
-  line-height: 1;
-  flex: none;
-}
-
-.letter-entry-text {
-  min-width: 0;
-}
-
-.letter-entry strong {
-  display: block;
-  font-size: 18px;
-  font-weight: 800;
-}
-
-.letter-entry small {
-  display: block;
-  margin-top: 2px;
-  font-size: 13px;
-  font-weight: 600;
-  opacity: 0.78;
 }
 
 /* 편지는 한마디보다 길게 쓴다. 감정 타일이 없는 화면이라 세로 여유가 있다. */
@@ -708,15 +661,8 @@
     gap: 8px;
   }
 
-  .letter-entry {
-    min-height: 58px;
-    padding: 10px 14px;
-    gap: 10px;
-  }
-
-  .letter-entry .mark { font-size: 22px; }
-  .letter-entry strong { font-size: 16px; }
-  .letter-entry small { font-size: 12px; }
+  /* 좁은 화면에서는 글자를 줄여 학급 이름과 한 줄에 남게 한다. */
+  .btn-letter { font-size: 13px; }
 
   .student {
     min-height: 72px;

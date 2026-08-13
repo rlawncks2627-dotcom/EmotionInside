@@ -23,7 +23,17 @@ export function RosterScreen({ rows, onPick, onLetter, onChangeClass }: Props) {
   return (
     <>
       <div className="topbar">
-        <span>{classLabel}</span>
+        <span className="who">
+          {classLabel}
+          <button
+            className="btn btn-ghost btn-letter"
+            type="button"
+            aria-pressed={letterMode}
+            onClick={() => setLetterMode((on) => !on)}
+          >
+            💌 선생님께 비밀편지
+          </button>
+        </span>
         <button className="btn btn-ghost" type="button" onClick={onChangeClass}>
           반 바꾸기
         </button>
@@ -31,25 +41,10 @@ export function RosterScreen({ rows, onPick, onLetter, onChangeClass }: Props) {
 
       <h1 className="title">{letterMode ? '누구의 편지야?' : '누구야?'}</h1>
       <p className="subtitle">
-        {letterMode ? '편지를 쓸 사람의 이름을 눌러줘.' : '네 이름을 눌러줘.'}
+        {letterMode
+          ? '편지를 쓸 사람의 이름을 눌러줘. (그만두려면 버튼을 다시 눌러줘)'
+          : '네 이름을 눌러줘.'}
       </p>
-
-      <button
-        className="letter-entry"
-        type="button"
-        aria-pressed={letterMode}
-        onClick={() => setLetterMode((on) => !on)}
-      >
-        <span className="mark" aria-hidden="true">
-          💌
-        </span>
-        <span className="letter-entry-text">
-          <strong>선생님께 비밀편지</strong>
-          <small>
-            {letterMode ? '그만두려면 다시 눌러줘.' : '오늘 기록을 마쳤어도 보낼 수 있어.'}
-          </small>
-        </span>
-      </button>
 
       <ul className="roster">
         {rows.map((r) => (
