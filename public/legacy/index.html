@@ -281,7 +281,7 @@
         btn.addEventListener('click', () => {
           save(KEY_STUDENT, { id: r.student_id, name: r.student_name, label: r.class_label });
           // 편지 고르기 중이면 기록 여부와 상관없이 누구나 고를 수 있다.
-          if (letterMode) { setLetterMode(false); startLetter('student'); return; }
+          if (letterMode) { setLetterMode(false); startLetter('student', r.submitted); return; }
           if (r.submitted) {
             toast(`${r.student_name}, 오늘은 이미 기록했어! 편지는 보낼 수 있어.`);
             return;
@@ -390,15 +390,15 @@
 
     $('letter-entry').addEventListener('click', () => setLetterMode(!letterMode));
 
-    function startLetter(from) {
+    function startLetter(from, checkedIn) {
       const me = saved(KEY_STUDENT);
       letterBackTo = from;
 
       $('l-name').textContent = me.name;
       $('l-class').textContent = me.label ?? '';
-      $('l-sub').textContent = from === 'emotion'
-        ? '선생님만 읽을 수 있어. 하고 싶은 말을 편하게 적어줘.'
-        : '오늘 기록은 이미 마쳤어. 그래도 하고 싶은 말이 있으면 여기에 적어줘.';
+      $('l-sub').textContent = checkedIn
+        ? '오늘 기록은 이미 마쳤어. 그래도 하고 싶은 말이 있으면 여기에 적어줘.'
+        : '선생님만 읽을 수 있어. 하고 싶은 말을 편하게 적어줘.';
 
       $('letter').value = '';
       $('l-anon').checked = false;
@@ -416,8 +416,9 @@
       $('l-send').disabled = sendingLetter || n === 0 || n > LETTER_LIMIT;
     });
 
-    $('go-letter').addEventListener('click', () => startLetter('emotion'));
-    $('d-letter').addEventListener('click', () => startLetter('done'));
+    $('go-letter').addEventListener('click', () => startLetter('emotion', false));
+    // 완료 화면에서 여는 편지는 언제나 기록을 마친 뒤다.
+    $('d-letter').addEventListener('click', () => startLetter('done', true));
     $('l-back').addEventListener('click', () => show(letterBackTo));
 
     $('l-send').addEventListener('click', async () => {
