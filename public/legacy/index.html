@@ -35,8 +35,19 @@
         <span id="s-class"></span>
         <button class="btn btn-ghost" type="button" id="forget-code">반 바꾸기</button>
       </div>
-      <h1 class="title">누구야?</h1>
-      <p class="subtitle">네 이름을 눌러줘.</p>
+      <h1 class="title" id="s-title">누구야?</h1>
+      <p class="subtitle" id="s-sub">네 이름을 눌러줘.</p>
+
+      <!-- 편지 입구를 명단에 둔다. 오늘 기록을 마친 학생은 감정 화면으로 못 들어가서,
+           감정 화면 안에만 입구가 있으면 편지를 아예 못 보낸다. -->
+      <button class="letter-entry" type="button" id="letter-entry" aria-pressed="false">
+        <span class="mark" aria-hidden="true">💌</span>
+        <span class="letter-entry-text">
+          <strong>선생님께 비밀편지</strong>
+          <small id="letter-entry-hint">오늘 기록을 마쳤어도 보낼 수 있어.</small>
+        </span>
+      </button>
+
       <ul class="roster" id="roster"></ul>
     </section>
 
@@ -247,6 +258,7 @@
     }
 
     function drawRoster(rows) {
+      setLetterMode(false);
       $('s-class').textContent = rows[0]?.class_label ?? '';
       const list = $('roster');
       list.innerHTML = '';
@@ -268,10 +280,10 @@
         btn.append(no, nm);
         btn.addEventListener('click', () => {
           save(KEY_STUDENT, { id: r.student_id, name: r.student_name, label: r.class_label });
+          // 편지 고르기 중이면 기록 여부와 상관없이 누구나 고를 수 있다.
+          if (letterMode) { setLetterMode(false); startLetter('student'); return; }
           if (r.submitted) {
-            // 기록은 하루 한 번이지만, 편지는 그와 별개로 보낼 수 있다.
-            toast(`${r.student_name}, 오늘은 이미 기록했어!`);
-            startLetter('student');
+            toast(`${r.student_name}, 오늘은 이미 기록했어! 편지는 보낼 수 있어.`);
             return;
           }
           startEmotion();
@@ -363,6 +375,20 @@
     const LETTER_LIMIT = 1000;
     let letterBackTo = 'emotion';
     let sendingLetter = false;
+    // 명단에서 「편지 쓸 사람」을 고르는 중인지. 이때는 기록을 마친 학생도 고를 수 있다.
+    let letterMode = false;
+
+    function setLetterMode(on) {
+      letterMode = on;
+      $('letter-entry').setAttribute('aria-pressed', String(on));
+      $('s-title').textContent = on ? '누구의 편지야?' : '누구야?';
+      $('s-sub').textContent = on ? '편지를 쓸 사람의 이름을 눌러줘.' : '네 이름을 눌러줘.';
+      $('letter-entry-hint').textContent = on
+        ? '그만두려면 다시 눌러줘.'
+        : '오늘 기록을 마쳤어도 보낼 수 있어.';
+    }
+
+    $('letter-entry').addEventListener('click', () => setLetterMode(!letterMode));
 
     function startLetter(from) {
       const me = saved(KEY_STUDENT);

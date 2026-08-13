@@ -1,14 +1,24 @@
+import { useState } from 'react';
+
 import type { RosterEntry } from '../types';
 
 interface Props {
   rows: RosterEntry[];
   onPick: (entry: RosterEntry) => void;
+  onLetter: (entry: RosterEntry) => void;
   onChangeClass: () => void;
 }
 
-/** 이름 고르기. 이미 낸 사람은 표시되지만 감정 내용은 보이지 않는다. */
-export function RosterScreen({ rows, onPick, onChangeClass }: Props) {
+/**
+ * 이름 고르기. 이미 낸 사람은 표시되지만 감정 내용은 보이지 않는다.
+ *
+ * 편지 입구를 이 화면에 두는 이유: 오늘 기록을 마친 학생은 감정 화면으로 못 들어가서,
+ * 감정 화면 안에만 입구가 있으면 편지를 아예 못 보낸다.
+ */
+export function RosterScreen({ rows, onPick, onLetter, onChangeClass }: Props) {
   const classLabel = rows[0]?.class_label ?? '';
+  // 편지를 쓸 사람을 고르는 중인지. 편지는 기록을 마쳤든 아니든 누구나 보낼 수 있다.
+  const [letterMode, setLetterMode] = useState(false);
 
   return (
     <>
@@ -19,8 +29,27 @@ export function RosterScreen({ rows, onPick, onChangeClass }: Props) {
         </button>
       </div>
 
-      <h1 className="title">누구야?</h1>
-      <p className="subtitle">네 이름을 눌러줘.</p>
+      <h1 className="title">{letterMode ? '누구의 편지야?' : '누구야?'}</h1>
+      <p className="subtitle">
+        {letterMode ? '편지를 쓸 사람의 이름을 눌러줘.' : '네 이름을 눌러줘.'}
+      </p>
+
+      <button
+        className="letter-entry"
+        type="button"
+        aria-pressed={letterMode}
+        onClick={() => setLetterMode((on) => !on)}
+      >
+        <span className="mark" aria-hidden="true">
+          💌
+        </span>
+        <span className="letter-entry-text">
+          <strong>선생님께 비밀편지</strong>
+          <small>
+            {letterMode ? '그만두려면 다시 눌러줘.' : '오늘 기록을 마쳤어도 보낼 수 있어.'}
+          </small>
+        </span>
+      </button>
 
       <ul className="roster">
         {rows.map((r) => (
@@ -29,7 +58,7 @@ export function RosterScreen({ rows, onPick, onChangeClass }: Props) {
               className="student"
               type="button"
               data-done={r.submitted ? '1' : '0'}
-              onClick={() => onPick(r)}
+              onClick={() => (letterMode ? onLetter(r) : onPick(r))}
             >
               <span className="no">{r.student_no}번</span>
               <span>{r.student_name}</span>

@@ -18,8 +18,8 @@ type Screen =
   | { kind: 'code' }
   | { kind: 'roster'; rows: RosterEntry[] }
   | { kind: 'emotion'; me: SavedStudent }
-  // checkedIn — 오늘 기록을 이미 마친 학생이 이름을 눌러 들어온 경우
-  | { kind: 'letter'; me: SavedStudent; checkedIn: boolean }
+  // checkedIn — 오늘 기록을 이미 마친 학생인지. from — 「돌아가기」로 어디로 갈지
+  | { kind: 'letter'; me: SavedStudent; checkedIn: boolean; from: 'roster' | 'emotion' }
   | { kind: 'done'; result: DoneResult };
 
 const toSaved = (r: RosterEntry): SavedStudent => ({
@@ -111,11 +111,10 @@ export default function App() {
   }, [notify]);
 
   function handleRosterPick(entry: RosterEntry) {
-    // 오늘 기록을 마친 학생도 편지는 보낼 수 있어야 한다. 기록은 하루 한 번이지만
-    // 하고 싶은 말이 생기는 건 하루 한 번이 아니다.
     if (entry.submitted) {
-      notify(`${entry.student_name}, 오늘은 이미 기록했어!`);
-      setScreen({ kind: 'letter', me: toSaved(entry), checkedIn: true });
+      // 편지는 명단 화면의 「선생님께 비밀편지」로 따로 들어간다. 여기서 편지 화면으로
+      // 끌고 가면 기록하러 온 아이가 영문 모를 화면을 만난다.
+      notify(`${entry.student_name}, 오늘은 이미 기록했어! 편지는 보낼 수 있어.`);
       return;
     }
     setScreen({ kind: 'emotion', me: toSaved(entry) });
@@ -156,6 +155,14 @@ export default function App() {
             <RosterScreen
               rows={screen.rows}
               onPick={handleRosterPick}
+              onLetter={(entry) =>
+                setScreen({
+                  kind: 'letter',
+                  me: toSaved(entry),
+                  checkedIn: entry.submitted,
+                  from: 'roster',
+                })
+              }
               onChangeClass={handleChangeClass}
             />
           )}
@@ -167,7 +174,9 @@ export default function App() {
               emotions={emotions}
               notify={notify}
               onNotMe={() => void backToRoster()}
-              onLetter={() => setScreen({ kind: 'letter', me: screen.me, checkedIn: false })}
+              onLetter={() =>
+                setScreen({ kind: 'letter', me: screen.me, checkedIn: false, from: 'emotion' })
+              }
               onDone={(result) => setScreen({ kind: 'done', result })}
             />
           )}
@@ -179,9 +188,9 @@ export default function App() {
               checkedIn={screen.checkedIn}
               notify={notify}
               onBack={() =>
-                screen.checkedIn
-                  ? void backToRoster()
-                  : setScreen({ kind: 'emotion', me: screen.me })
+                screen.from === 'emotion'
+                  ? setScreen({ kind: 'emotion', me: screen.me })
+                  : void backToRoster()
               }
               onDone={() => void backToRoster()}
             />
