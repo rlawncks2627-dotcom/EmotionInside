@@ -89,7 +89,8 @@
         <p id="d-sub"></p>
         <div class="said" id="d-note" hidden></div>
         <!-- 기록은 하루 한 번이지만, 하고 싶은 말이 생기는 건 하루 한 번이 아니다. -->
-        <button class="btn btn-ghost btn-letter" type="button" id="d-letter">선생님께 비밀편지</button>
+        <button class="btn btn-primary" type="button" id="d-letter">💌 선생님께 비밀편지</button>
+        <button class="btn btn-ghost" type="button" id="d-back" hidden>명단으로 돌아가기</button>
       </div>
     </section>
 
@@ -282,10 +283,8 @@
           save(KEY_STUDENT, { id: r.student_id, name: r.student_name, label: r.class_label });
           // 편지 고르기 중이면 기록 여부와 상관없이 누구나 고를 수 있다.
           if (letterMode) { setLetterMode(false); startLetter('student', r.submitted); return; }
-          if (r.submitted) {
-            toast(`${r.student_name}, 오늘은 이미 기록했어! 편지는 보낼 수 있어.`);
-            return;
-          }
+          // 알림 하나로 돌려세우면 편지를 보내고 싶은 아이가 그 자리에서 막힌다.
+          if (r.submitted) { showAlready(r.student_name); return; }
           startEmotion();
         });
 
@@ -346,6 +345,20 @@
       done(false);
     }
 
+    /**
+     * 오늘 기록을 이미 마친 학생 화면. 어떤 감정을 골랐는지는 돌려주지 않으므로
+     * (다른 학생 기록 보호) 캐릭터는 감춘다. 편지로 가는 길은 열어둔다.
+     */
+    function showAlready(name) {
+      $('d-img').hidden = true;
+      $('d-title').textContent = `${name}, 오늘은 이미 기록했어!`;
+      $('d-sub').textContent =
+        '기록은 하루에 한 번이야. 그래도 선생님께 하고 싶은 말이 있으면 편지를 보낼 수 있어.';
+      $('d-note').hidden = true;
+      $('d-back').hidden = false;
+      show('done');
+    }
+
     function done(already) {
       const e = emotions.find((x) => x.code === picked);
       const bucket = e.valence >= 1 ? 'good' : e.valence === 0 ? 'soso' : 'hard';
@@ -366,6 +379,8 @@
         $('d-note').hidden = true;
       }
 
+      // 방금 기록을 마친 참이라 명단으로 돌아갈 일이 없다. 편지 버튼만 남긴다.
+      $('d-back').hidden = true;
       show('done');
     }
 
@@ -460,8 +475,12 @@
         ? '누가 썼는지는 아무도 몰라. 선생님이 잘 읽어보실 거야.'
         : `선생님이 ${me.name}의 편지를 읽어보실 거야.`;
       $('d-note').hidden = true;
+      // 편지를 보낸 뒤에는 어디서 왔든 명단으로 돌아갈 길을 열어둔다.
+      $('d-back').hidden = false;
       show('done');
     });
+
+    $('d-back').addEventListener('click', () => show('student'));
 
     // ── 시작 ────────────────────────────────────────────
 
@@ -533,12 +552,8 @@
         // 이미 오늘 기록했다면 곧바로 완료 화면을 보여준다.
         if (mine.submitted) {
           save(KEY_STUDENT, { id: mine.student_id, name: mine.student_name, label: mine.class_label });
-          // 어떤 감정을 골랐는지는 돌려주지 않으므로(다른 학생 기록 보호) 캐릭터는 감춘다.
-          $('d-img').hidden = true;
-          $('d-title').textContent = `${mine.student_name}, 오늘은 이미 기록했어!`;
-          $('d-sub').textContent = '기록은 하루에 한 번이야. 내일 또 만나자!';
-          $('d-note').hidden = true;
-          show('done');
+          drawRoster(rows);          // 「명단으로 돌아가기」를 눌렀을 때 보일 명단을 미리 그려둔다
+          showAlready(mine.student_name);
           return;
         }
         save(KEY_STUDENT, { id: mine.student_id, name: mine.student_name, label: mine.class_label });
