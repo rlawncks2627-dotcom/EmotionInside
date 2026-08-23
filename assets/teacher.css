@@ -574,6 +574,12 @@ body:not([data-screen="loading"]) .boot { display: none; }
 
 .inbox-count[hidden] { display: none; }
 
+/* 휴지통 수는 「왔다」 는 알림이 아니라 그저 갯수라, 빨강을 쓰지 않는다. */
+.inbox-count.trash-count { background: var(--ink-soft); }
+
+/* 편지함 머리말의 버튼 둘(휴지통·닫기). */
+.detail .d-head-btns { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
 .inbox-note {
   margin: 0 0 14px;
   padding: 10px 13px;
@@ -637,6 +643,51 @@ body:not([data-screen="loading"]) .boot { display: none; }
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* ── 편지 지우기 · 휴지통 ──────────────────────────── */
+
+/* 편지마다 붙는 「지우기」/「되돌리기」. 줄 오른쪽 끝으로 밀어, 읽는 흐름인
+   보낸 사람·시각 뒤에 오게 한다. */
+.letter-list .letter-act {
+  margin-left: auto;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.letter-list .letter-act:hover { background: #f2effa; color: #6b5cb0; }
+.letter-list .letter-act:disabled { opacity: 0.5; }
+
+/* 휴지통에 있는 편지는 옅게. 지워진 것이 편지함의 편지와 같은 무게로 보이면 안 된다. */
+.letter-list li[data-trashed="1"] {
+  border-left-color: var(--line);
+  background: #f7f6fa;
+  opacity: 0.85;
+}
+
+.letter-list li[data-trashed="1"] .what { font-weight: 500; }
+
+/* 언제 사라지는지. 재촉하는 표시가 아니라 알려주는 표시라 조용한 색으로 둔다. */
+.letter-list .gone {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ece9f4;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* 휴지통 비우기는 되돌릴 수 없다. 다른 버튼과 같은 얼굴이면 안 된다.
+   btn-quiet 위에 덧입히므로 배경까지 다시 잡는다. */
+.btn.btn-danger { background: #fdf1f0; color: #b3352f; }
+.btn.btn-danger:hover { background: #f9e3e1; }
+
+/* .detail .d-foot 이 display:flex 라서 hidden 을 덮는다. 되살려 준다. */
+.detail .d-foot[hidden] { display: none; }
 
 /* ── 학생 상세 ─────────────────────────────────────── */
 
@@ -892,5 +943,8 @@ dialog.detail::backdrop { background: rgba(20, 12, 40, 0.55); }
   .stat { padding: 7px 11px; font-size: 13px; }
 
   .week-nav button { padding: 8px 10px; font-size: 13px; }
+
+  /* 편지함 머리말에 버튼이 둘이라, 320px 기기에서는 좁혀야 제목이 안 밀린다. */
+  .detail .d-head-btns .btn { padding: 0 12px; font-size: 14px; }
 }
 
